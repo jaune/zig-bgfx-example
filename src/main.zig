@@ -19,7 +19,7 @@ const builtin = @import("builtin");
 const WIDTH = 1280;
 const HEIGHT = 720;
 
-const aspect_ratio = @intToFloat(f32, WIDTH) / HEIGHT;
+const aspect_ratio = @as(f32, @floatFromInt(WIDTH)) / HEIGHT;
 
 const PosColorVertex = struct {
     x: f32,
@@ -140,10 +140,10 @@ pub fn main() !void {
     const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
     defer allocator.free(compiledFragmentShaderBuffer);
 
-    const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(u32, compiledVertexShaderBuffer.len)));
+    const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
     assert(vsh.idx != std.math.maxInt(c_ushort));
 
-    const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(u32, compiledFragmentShaderBuffer.len)));
+    const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
     assert(fsh.idx != std.math.maxInt(c_ushort));
     const programHandle = bgfx.createProgram(vsh, fsh, true);
     defer bgfx.destroyProgram(programHandle);
@@ -172,7 +172,7 @@ pub fn main() !void {
         bgfx.dbgTextClear(0, false);
 
         var yy: f32 = 0;
-        var time = @intToFloat(f32, std.time.milliTimestamp() - start_time) / std.time.ms_per_s;
+        var time: f32 = @as(f32, @floatFromInt(std.time.milliTimestamp() - start_time)) / std.time.ms_per_s;
         while (yy < 11) : (yy += 1.0) {
             var xx: f32 = 0;
             while (xx < 11) : (xx += 1.0) {

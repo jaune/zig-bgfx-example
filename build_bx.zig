@@ -17,21 +17,24 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
         "-DBX_CONFIG_DEBUG",
     };
 
-    const bx_lib = exe.builder.addStaticLibrary("bx", null);
-    bx_lib.setTarget(exe.target);
-    bx_lib.setBuildMode(exe.build_mode);
+    const bx_lib = exe.step.owner.addStaticLibrary(.{ .name = "bx", .target = exe.target, .optimize = exe.optimize});
+    // bx_lib.setTarget(exe.target);
+    // bx_lib.setBuildMode(exe.build_mode);
 
     addBxIncludes(bx_lib);
-    bx_lib.addIncludePath(bx_path ++ "3rdparty/");
+    bx_lib.addIncludePath(.{ .path = bx_path ++ "3rdparty/"});
     if (bx_lib.target.isDarwin()) {
         bx_lib.linkFramework("CoreFoundation");
         bx_lib.linkFramework("Foundation");
     }
-    bx_lib.addCSourceFile(bx_path ++ "src/amalgamated.cpp", &cxx_options);
+    bx_lib.addCSourceFile(.{ .file = .{ .path = bx_path ++ "src/amalgamated.cpp"}, .flags = &cxx_options});
     bx_lib.want_lto = false;
     bx_lib.linkSystemLibrary("c");
     bx_lib.linkSystemLibrary("c++");
-    bx_lib.install();
+
+    const bx_lib_artifact = exe.step.owner.addInstallArtifact(bx_lib, .{});
+    exe.step.owner.getInstallStep().dependOn(&bx_lib_artifact.step);
+    //bx_lib.install();
     return bx_lib;
 }
 
@@ -44,8 +47,8 @@ fn addBxIncludes(exe: *std.build.LibExeObjStep) void {
         compat_include = thisDir() ++ "/" ++ bx_path ++ "include/compat/osx/";
     }
 
-    exe.addIncludePath(compat_include);
-    exe.addIncludePath(thisDir() ++ "/" ++ bx_path ++ "include/");
+    exe.addIncludePath(.{ .path = compat_include});
+    exe.addIncludePath(.{ .path = thisDir() ++ "/" ++ bx_path ++ "include/"});
 }
 
 inline fn thisDir() []const u8 {
