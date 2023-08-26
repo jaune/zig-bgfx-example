@@ -21,6 +21,7 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
         "-ffast-math",
         "-DBX_CONFIG_DEBUG",
         "-DBGFX_CONFIG_USE_TINYSTL=0",
+        "-DBGFX_CONFIG_MULTITHREADED=0", // OSX does not support multithreaded rendering
     };
 
     // we are creating our own module here

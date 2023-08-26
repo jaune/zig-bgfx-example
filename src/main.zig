@@ -10,9 +10,9 @@ const assert = std.debug.assert;
 const panic = std.debug.panic;
 const bgfx = @import("bgfx");
 
-const zigstr = @import("zigstr");
-const zm = @import("zmath");
-const sc = @import("shader_compiler.zig");
+// const zigstr = @import("zigstr");
+// const zm = @import("zmath");
+// const sc = @import("shader_compiler.zig");
 
 const builtin = @import("builtin");
 
@@ -84,7 +84,7 @@ pub fn main() !void {
     }
     defer c.SDL_Quit();
 
-    var window = c.SDL_CreateWindow("test", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, c.SDL_WINDOW_SHOWN | c.SDL_WINDOW_OPENGL | c.SDL_WINDOW_ALLOW_HIGHDPI) orelse
+    var window = c.SDL_CreateWindow("BGFX Zig Test", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, c.SDL_WINDOW_SHOWN | c.SDL_WINDOW_OPENGL | c.SDL_WINDOW_ALLOW_HIGHDPI) orelse
         {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
@@ -94,6 +94,9 @@ pub fn main() !void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+    _ = allocator;
+
+    c.SDL_Log("Creating BGFX State");
 
     var bgfxInit = std.mem.zeroes(bgfx.Init);
     bgfxInit.type = bgfx.RendererType.OpenGL;
@@ -116,6 +119,8 @@ pub fn main() !void {
     defer bgfx.shutdown();
     assert(success);
 
+    c.SDL_Log("BGFX Initialized");
+
     // Enable debug text.
     bgfx.setDebug(bgfx.DebugFlags_Text);
     // Set view 0 clear state.
@@ -131,30 +136,37 @@ pub fn main() !void {
     const includes = [_][]const u8{
         "assets/shaders/include",
     };
+    _ = includes;
 
     const defines = [_][]const u8{};
+    _ = defines;
 
-    const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
-    defer allocator.free(compiledVertexShaderBuffer);
+    // const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
+    // defer allocator.free(compiledVertexShaderBuffer);
+    //
+    // const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
+    // defer allocator.free(compiledFragmentShaderBuffer);
 
-    const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
-    defer allocator.free(compiledFragmentShaderBuffer);
+    // const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
+    // assert(vsh.idx != std.math.maxInt(c_ushort));
+    //
+    // const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
+    // assert(fsh.idx != std.math.maxInt(c_ushort));
+    // const programHandle = bgfx.createProgram(vsh, fsh, true);
+    // defer bgfx.destroyProgram(programHandle);
 
-    const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
-    assert(vsh.idx != std.math.maxInt(c_ushort));
-
-    const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
-    assert(fsh.idx != std.math.maxInt(c_ushort));
-    const programHandle = bgfx.createProgram(vsh, fsh, true);
-    defer bgfx.destroyProgram(programHandle);
-
-    const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
-
-    const projMtx = zm.perspectiveFovRhGl(0.25 * math.pi, aspect_ratio, 0.1, 100.0);
+    // const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
+    //
+    // const projMtx = zm.perspectiveFovRhGl(0.25 * math.pi, aspect_ratio, 0.1, 100.0);
     const state = 0 | bgfx.StateFlags_WriteRgb | bgfx.StateFlags_WriteA | bgfx.StateFlags_WriteZ | bgfx.StateFlags_DepthTestLess | bgfx.StateFlags_CullCcw | bgfx.StateFlags_Msaa;
+    _ = state;
 
     var quit = false;
     var start_time: i64 = std.time.milliTimestamp();
+    _ = start_time;
+
+    c.SDL_Log("Main Loop Starting");
+
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
@@ -166,28 +178,30 @@ pub fn main() !void {
             }
         }
 
-        bgfx.setViewTransform(0, &zm.matToArr(viewMtx), &zm.matToArr(projMtx));
+        c.SDL_Log("Rendering Frame");
+
+        // bgfx.setViewTransform(0, &zm.matToArr(viewMtx), &zm.matToArr(projMtx));
         bgfx.setViewRect(0, 0, 0, WIDTH, HEIGHT);
         bgfx.touch(0);
         bgfx.dbgTextClear(0, false);
 
-        var yy: f32 = 0;
-        var time: f32 = @as(f32, @floatFromInt(std.time.milliTimestamp() - start_time)) / std.time.ms_per_s;
-        while (yy < 11) : (yy += 1.0) {
-            var xx: f32 = 0;
-            while (xx < 11) : (xx += 1.0) {
-                const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 0.0);
-                const rotX = zm.rotationX(time + xx * 0.21);
-                const rotY = zm.rotationY(time + yy * 0.37);
-                const rotXY = zm.mul(rotX, rotY);
-                const modelMtx = zm.mul(rotXY, trans);
-                _ = bgfx.setTransform(&zm.matToArr(modelMtx), 1);
-                bgfx.setVertexBuffer(0, vbh, 0, cube_vertices.len);
-                bgfx.setIndexBuffer(ibh, 0, cube_tri_list.len);
-                bgfx.setState(state, 0);
-                bgfx.submit(0, programHandle, 0, 255);
-            }
-        }
+        // var yy: f32 = 0;
+        // var time: f32 = @as(f32, @floatFromInt(std.time.milliTimestamp() - start_time)) / std.time.ms_per_s;
+        // while (yy < 11) : (yy += 1.0) {
+        //     var xx: f32 = 0;
+        //     while (xx < 11) : (xx += 1.0) {
+        //         const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 0.0);
+        //         const rotX = zm.rotationX(time + xx * 0.21);
+        //         const rotY = zm.rotationY(time + yy * 0.37);
+        //         const rotXY = zm.mul(rotX, rotY);
+        //         const modelMtx = zm.mul(rotXY, trans);
+        //         _ = bgfx.setTransform(&zm.matToArr(modelMtx), 1);
+        //         bgfx.setVertexBuffer(0, vbh, 0, cube_vertices.len);
+        //         bgfx.setIndexBuffer(ibh, 0, cube_tri_list.len);
+        //         bgfx.setState(state, 0);
+        //         bgfx.submit(0, programHandle, 0, 255);
+        //     }
+        // }
 
         _ = bgfx.frame(false);
 

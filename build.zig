@@ -40,8 +40,12 @@ pub fn build(b: *std.Build) void {
 
     // sdl2
     if (target.isDarwin()){
-        exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx"});
-        exe.linkFramework("sdl2");
+        // Add SDL2 (OSX only version, install via Homebrew)
+        exe.addIncludePath(.{ .path = "/usr/local/include/SDL2"});
+        exe.linkSystemLibrary("sdl2");
+
+        // exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx"});
+        // exe.linkFramework("sdl2");
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreFoundation");
         exe.linkFramework("Cocoa");
@@ -65,7 +69,11 @@ pub fn build(b: *std.Build) void {
     }
 
     // zmath
-    //exe.addPackage(zmath.pkg);
+    // exe.addPackage(zmath.pkg);
+    const zmath = b.addModule("zmath", .{
+        .source_file = .{ .path = "3rdparty/zmath/src/zmath.zig" }
+    });
+    exe.addModule("zmath", zmath);
 
     bx.link(exe);
     bimg.link(exe);
