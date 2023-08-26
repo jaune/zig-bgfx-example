@@ -4,7 +4,7 @@ const ArrayList = std.ArrayList;
 const ChildProcess = std.ChildProcess;
 
 const mem = std.mem;
-const str = @import("zigstr");
+// const str = @import("zigstr");
 
 pub const ShaderTypes = enum { Vertex, Fragment, Compute };
 
@@ -16,6 +16,18 @@ fn shaderTypeToString(shaderType: ShaderTypes) []const u8 {
         ShaderTypes.Vertex => vertex,
         ShaderTypes.Fragment => fragment,
         ShaderTypes.Compute => compute,
+    };
+}
+
+/// fromBytes returns a new Zigstr from the byte slice `str`, which will *not* be freed on `deinit`.
+pub fn fromBytes(allocator: mem.Allocator, str: []const u8) !Self {
+    return Self{
+        .allocator = allocator,
+        .bytes = blk: {
+            var al = try std.ArrayList(u8).initCapacity(allocator, str.len);
+            al.appendSliceAssumeCapacity(str);
+            break :blk al;
+        },
     };
 }
 
@@ -34,7 +46,7 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
     try compiler_args_list.append(path);
 
     // get binary path from path
-    var bin_path = try str.fromBytes(allocator, path[0..mem.lastIndexOfScalar(u8, path, '.').?]);
+    var bin_path = try fromBytes(allocator, path[0..mem.lastIndexOfScalar(u8, path, '.').?]);
     defer bin_path.deinit();
     try bin_path.concat(".bin");
     try compiler_args_list.append("-o");

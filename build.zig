@@ -3,7 +3,7 @@ const std = @import("std");
 const bx = @import("build_bx.zig");
 const bimg = @import("build_bimg.zig");
 const bgfx = @import("build_bgfx.zig");
-// const sc = @import("build_shader_compiler.zig");
+const sc = @import("build_shader_compiler.zig");
 // const tp = @import("build_texture_packer.zig");
 
 // const zigstr = @import("build_zigstr.zig");
@@ -69,9 +69,21 @@ pub fn build(b: *std.Build) void {
     }
 
     // zmath
+    const zmath_options_step = b.addOptions();
+    zmath_options_step.addOption(
+        bool,
+        "enable_cross_platform_determinism",
+        true,
+    );
+
+    const zmath_options = zmath_options_step.createModule();
+
     // exe.addPackage(zmath.pkg);
     const zmath = b.addModule("zmath", .{
-        .source_file = .{ .path = "3rdparty/zmath/src/zmath.zig" }
+        .source_file = .{ .path = "3rdparty/zmath/src/zmath.zig" },
+        .dependencies = &.{
+            .{ .name = "zmath_options", .module = zmath_options },
+        },
     });
     exe.addModule("zmath", zmath);
 
@@ -94,7 +106,7 @@ pub fn build(b: *std.Build) void {
     b.getInstallStep().dependOn(&install_exe.step);
 
     // shader compiler
-    // _ = sc.build(b, target, optimize);
+    _ = sc.build(b, target, optimize);
 
     // texture packer
     // _ = tp.build(b, target, optimize);

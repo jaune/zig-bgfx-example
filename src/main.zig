@@ -143,27 +143,26 @@ pub fn main() !void {
 
     // const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
     // defer allocator.free(compiledVertexShaderBuffer);
-    //
+
     // const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
     // defer allocator.free(compiledFragmentShaderBuffer);
 
     // const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
     // assert(vsh.idx != std.math.maxInt(c_ushort));
-    //
+
     // const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
     // assert(fsh.idx != std.math.maxInt(c_ushort));
+
     // const programHandle = bgfx.createProgram(vsh, fsh, true);
     // defer bgfx.destroyProgram(programHandle);
 
-    // const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
-    //
-    // const projMtx = zm.perspectiveFovRhGl(0.25 * math.pi, aspect_ratio, 0.1, 100.0);
+    const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
+
+    const projMtx = zm.perspectiveFovRhGl(0.25 * math.pi, aspect_ratio, 0.1, 100.0);
     const state = 0 | bgfx.StateFlags_WriteRgb | bgfx.StateFlags_WriteA | bgfx.StateFlags_WriteZ | bgfx.StateFlags_DepthTestLess | bgfx.StateFlags_CullCcw | bgfx.StateFlags_Msaa;
-    _ = state;
 
     var quit = false;
     var start_time: i64 = std.time.milliTimestamp();
-    _ = start_time;
 
     c.SDL_Log("Main Loop Starting");
 
@@ -180,28 +179,29 @@ pub fn main() !void {
 
         c.SDL_Log("Rendering Frame");
 
-        // bgfx.setViewTransform(0, &zm.matToArr(viewMtx), &zm.matToArr(projMtx));
+        bgfx.setViewTransform(0, &zm.matToArr(viewMtx), &zm.matToArr(projMtx));
         bgfx.setViewRect(0, 0, 0, WIDTH, HEIGHT);
         bgfx.touch(0);
         bgfx.dbgTextClear(0, false);
 
-        // var yy: f32 = 0;
-        // var time: f32 = @as(f32, @floatFromInt(std.time.milliTimestamp() - start_time)) / std.time.ms_per_s;
-        // while (yy < 11) : (yy += 1.0) {
-        //     var xx: f32 = 0;
-        //     while (xx < 11) : (xx += 1.0) {
-        //         const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 0.0);
-        //         const rotX = zm.rotationX(time + xx * 0.21);
-        //         const rotY = zm.rotationY(time + yy * 0.37);
-        //         const rotXY = zm.mul(rotX, rotY);
-        //         const modelMtx = zm.mul(rotXY, trans);
-        //         _ = bgfx.setTransform(&zm.matToArr(modelMtx), 1);
-        //         bgfx.setVertexBuffer(0, vbh, 0, cube_vertices.len);
-        //         bgfx.setIndexBuffer(ibh, 0, cube_tri_list.len);
-        //         bgfx.setState(state, 0);
-        //         bgfx.submit(0, programHandle, 0, 255);
-        //     }
-        // }
+        var yy: f32 = 0;
+        var time: f32 = @as(f32, @floatFromInt(std.time.milliTimestamp() - start_time)) / std.time.ms_per_s;
+        while (yy < 11) : (yy += 1.0) {
+            var xx: f32 = 0;
+            while (xx < 11) : (xx += 1.0) {
+                const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 0.0);
+                const rotX = zm.rotationX(time + xx * 0.21);
+                const rotY = zm.rotationY(time + yy * 0.37);
+                const rotXY = zm.mul(rotX, rotY);
+                const modelMtx = zm.mul(rotXY, trans);
+                _ = bgfx.setTransform(&zm.matToArr(modelMtx), 1);
+                bgfx.setVertexBuffer(0, vbh, 0, cube_vertices.len);
+                bgfx.setIndexBuffer(ibh, 0, cube_tri_list.len);
+                bgfx.setState(state, 0);
+                // bgfx.submit(0, programHandle, 0, 255);
+                // bgfx.submit(0, 0, 0, 255);
+            }
+        }
 
         _ = bgfx.frame(false);
 
