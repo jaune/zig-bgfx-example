@@ -11,7 +11,7 @@ const panic = std.debug.panic;
 const bgfx = @import("bgfx");
 
 // const zigstr = @import("zigstr");
-// const zm = @import("zmath");
+const zm = @import("zmath");
 // const sc = @import("shader_compiler.zig");
 
 const builtin = @import("builtin");
