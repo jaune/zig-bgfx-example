@@ -1,0 +1,10 @@
+.{
+    .name = "ziggy",
+    .version = "0.11.1",
+    .dependencies = .{
+        .zigstr = .{
+            .url = "https://github.com/jecolon/zigstr/archive/refs/tags/v0.11.1.tar.gz",
+            .hash = "12206f2450d6c269835adc8bf676c97db4355dff06848e2a30dfd66bdb767e7d2742",
+        },
+    },
+}

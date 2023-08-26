@@ -87,6 +87,18 @@ pub fn build(b: *std.Build) void {
     });
     exe.addModule("zmath", zmath);
 
+    // const zigstr = b.addModule("zigstr", .{
+    //     .source_file = .{ .path = "3rdparty/zigstr/src/Zigstr.zig" },
+    //     .dependencies = &.{},
+    // });
+    // exe.addModule("zigstr", zigstr);
+
+    const zigstr = b.dependency("zigstr", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.addModule("zigstr", zigstr.module("zigstr"));
+
     bx.link(exe);
     bimg.link(exe);
     bgfx.link(exe);

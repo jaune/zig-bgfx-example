@@ -5,15 +5,15 @@ const expectEqual = std.testing.expectEqual;
 const expectEqualStrings = std.testing.expectEqualStrings;
 const expectEqualSlices = std.testing.expectEqualSlices;
 
-const zigstr = @import("zigstr");
+const Zigstr = @import("Zigstr.zig");
 
 test "Zigstr README tests" {
     var allocator = std.testing.allocator;
-    var str = try zigstr.fromBytes(std.testing.allocator, "Héllo");
+    var str = try Zigstr.fromConstBytes(std.testing.allocator, "Héllo");
     defer str.deinit();
 
     // Byte count.
-    try expectEqual(@as(usize, 6), str.byteCount());
+    try expectEqual(@as(usize, 6), str.byteLen());
 
     // Code point iteration.
     var cp_iter = str.codePointIter();
@@ -21,16 +21,16 @@ test "Zigstr README tests" {
 
     var i: usize = 0;
     while (cp_iter.next()) |cp| : (i += 1) {
-        try expectEqual(want[i], cp.scalar);
+        try expectEqual(want[i], cp.code);
     }
 
     // Code point count.
-    try expectEqual(@as(usize, 5), try str.codePointCount());
+    try expectEqual(@as(usize, 5), try str.codePointLen());
 
     // Collect all code points at once.
     const code_points = try str.codePoints(allocator);
     defer allocator.free(code_points);
-    for (code_points) |cp, j| {
+    for (code_points, 0..) |cp, j| {
         try expectEqual(want[j], cp);
     }
 
@@ -40,35 +40,34 @@ test "Zigstr README tests" {
 
     i = 0;
     while (giter.next()) |gc| : (i += 1) {
-        try expect(gc.eql(gc_want[i]));
+        try expect(gc.eql(str.bytes(), gc_want[i]));
     }
 
     // Collect all grapheme clusters at once.
-    try expectEqual(@as(usize, 5), try str.graphemeCount());
+    try expectEqual(@as(usize, 5), try str.graphemeLen());
     const gcs = try str.graphemes(allocator);
     defer allocator.free(gcs);
 
-    for (gcs) |gc, j| {
-        try expect(gc.eql(gc_want[j]));
+    for (gcs, 0..) |gc, j| {
+        try expect(gc.eql(str.bytes(), gc_want[j]));
     }
 
     // Grapheme count.
-    try expectEqual(@as(usize, 5), try str.graphemeCount());
+    try expectEqual(@as(usize, 5), try str.graphemeLen());
 
     // Indexing (with negative indexes too.)
     try expectEqual(try str.byteAt(0), 72); // H
     try expectEqual(try str.byteAt(-2), 108); // l
     try expectEqual(try str.codePointAt(0), 'H');
     try expectEqual(try str.codePointAt(-2), 'l');
-    try expect((try str.graphemeAt(0)).eql("H"));
-    try expect((try str.graphemeAt(-4)).eql("é"));
+    try expect((try str.graphemeAt(0)).eql(str.bytes(), "H"));
+    try expect((try str.graphemeAt(-4)).eql(str.bytes(), "é"));
 
     // Copy
     var str2 = try str.copy(allocator);
     defer str2.deinit();
-    try expect(str.eql(str2.bytes.items));
+    try expect(str.eql(str2));
     try expect(str2.eql("Héllo"));
-    try expect(str.sameAs(str2));
 
     // Empty and obtain owned slice of bytes.
     const bytes2 = try str2.toOwnedSlice();
@@ -100,12 +99,12 @@ test "Zigstr README tests" {
 
     // indexOf / contains / lastIndexOf
     try str.reset("H\u{65}\u{301}llo"); // Héllo
-    try expectEqual(try str.indexOf("l"), 2);
-    try expectEqual(try str.indexOf("z"), null);
-    try expect(try str.contains("l"));
-    try expect(!try str.contains("z"));
-    try expectEqual(try str.lastIndexOf("l"), 3);
-    try expectEqual(try str.lastIndexOf("z"), null);
+    try expectEqual(str.indexOf("l"), 2);
+    try expectEqual(str.indexOf("z"), null);
+    try expect(str.contains("l"));
+    try expect(!str.contains("z"));
+    try expectEqual(str.lastIndexOf("l"), 3);
+    try expectEqual(str.lastIndexOf("z"), null);
 
     // count
     try expectEqual(str.count("l"), 2);
@@ -122,7 +121,7 @@ test "Zigstr README tests" {
     try expect(tok_iter.next() == null);
 
     // Collect all tokens at once.
-    var ts = try str.tokenize(" ", allocator);
+    var ts = try str.tokenize(allocator, " ");
     defer allocator.free(ts);
     try expectEqual(@as(usize, 2), ts.len);
     try expectEqualStrings("Hello", ts[0]);
@@ -137,7 +136,7 @@ test "Zigstr README tests" {
     try expect(split_iter.next() == null);
 
     // Collect all sub-strings at once.
-    var ss = try str.split(" ", allocator);
+    var ss = try str.split(allocator, " ");
     defer allocator.free(ss);
     try expectEqual(@as(usize, 4), ss.len);
     try expectEqualStrings("", ss[0]);
@@ -184,7 +183,7 @@ test "Zigstr README tests" {
     // Append a code point or many.
     try str.reset("Hell");
     try str.append('o');
-    try expectEqual(@as(usize, 5), str.bytes.items.len);
+    try expectEqual(@as(usize, 5), str.byteLen());
     try expect(str.eql("Hello"));
     try str.appendAll(&[_]u21{ ' ', 'W', 'o', 'r', 'l', 'd' });
     try expect(str.eql("Hello World"));
@@ -232,29 +231,29 @@ test "Zigstr README tests" {
     // You can also construct a Zigstr from coce points.
     const cp_array = [_]u21{ 0x68, 0x65, 0x6C, 0x6C, 0x6F }; // "hello"
     str.deinit();
-    str = try zigstr.fromCodePoints(allocator, &cp_array);
+    str = try Zigstr.fromCodePoints(allocator, &cp_array);
     try expect(str.eql("hello"));
-    try expectEqual(str.codePointCount(), 5);
+    try expectEqual(str.codePointLen(), 5);
 
     // Also create a Zigstr from a slice of strings.
     str.deinit();
-    str = try zigstr.fromJoined(std.testing.allocator, &[_][]const u8{ "Hello", "World" }, " ");
+    str = try Zigstr.fromJoined(std.testing.allocator, &[_][]const u8{ "Hello", "World" }, " ");
     try expect(str.eql("Hello World"));
 
     // Chomp line breaks.
     try str.reset("Hello\n");
     try str.chomp();
-    try expectEqual(@as(usize, 5), str.bytes.items.len);
+    try expectEqual(@as(usize, 5), str.byteLen());
     try expect(str.eql("Hello"));
 
     try str.reset("Hello\r");
     try str.chomp();
-    try expectEqual(@as(usize, 5), str.bytes.items.len);
+    try expectEqual(@as(usize, 5), str.byteLen());
     try expect(str.eql("Hello"));
 
     try str.reset("Hello\r\n");
     try str.chomp();
-    try expectEqual(@as(usize, 5), str.bytes.items.len);
+    try expectEqual(@as(usize, 5), str.byteLen());
     try expect(str.eql("Hello"));
 
     // byteSlice, codePointSlice, graphemeSlice, substr
@@ -268,7 +267,7 @@ test "Zigstr README tests" {
 
     const gs = try str.graphemeSlice(allocator, 1, 2);
     defer allocator.free(gs);
-    try expect(gs[0].eql("\u{0065}\u{0301}"));
+    try expect(gs[0].eql(str.bytes(), "\u{0065}\u{0301}"));
 
     // Substrings
     var sub = try str.substr(1, 2);

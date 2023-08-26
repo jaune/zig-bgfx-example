@@ -4,7 +4,7 @@ const ArrayList = std.ArrayList;
 const ChildProcess = std.ChildProcess;
 
 const mem = std.mem;
-// const str = @import("zigstr");
+const str = @import("zigstr");
 
 pub const ShaderTypes = enum { Vertex, Fragment, Compute };
 
@@ -19,18 +19,6 @@ fn shaderTypeToString(shaderType: ShaderTypes) []const u8 {
     };
 }
 
-/// fromBytes returns a new Zigstr from the byte slice `str`, which will *not* be freed on `deinit`.
-pub fn fromBytes(allocator: mem.Allocator, str: []const u8) !Self {
-    return Self{
-        .allocator = allocator,
-        .bytes = blk: {
-            var al = try std.ArrayList(u8).initCapacity(allocator, str.len);
-            al.appendSliceAssumeCapacity(str);
-            break :blk al;
-        },
-    };
-}
-
 pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const []const u8, defines: []const []const u8, shaderType: ShaderTypes, allocator: Allocator) ![]u8 {
     var compiler_args_list = ArrayList([]const u8).init(allocator);
     defer compiler_args_list.deinit();
@@ -41,16 +29,17 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
     var defines_arg = ArrayList(u8).init(allocator);
     defer defines_arg.deinit();
 
-    try compiler_args_list.append("shaderc.exe");
+    // try compiler_args_list.append("shaderc.exe");
+    try compiler_args_list.append("zig-out/bin/shaderc");
     try compiler_args_list.append("-f");
     try compiler_args_list.append(path);
 
     // get binary path from path
-    var bin_path = try fromBytes(allocator, path[0..mem.lastIndexOfScalar(u8, path, '.').?]);
+    var bin_path = try str.fromConstBytes(allocator, path[0..mem.lastIndexOfScalar(u8, path, '.').?]);
     defer bin_path.deinit();
     try bin_path.concat(".bin");
     try compiler_args_list.append("-o");
-    try compiler_args_list.append(bin_path.bytes.items);
+    try compiler_args_list.append(bin_path.bytes());
     try compiler_args_list.append("--varyingdef");
     try compiler_args_list.append(varyings);
     for (includes) |include| {
@@ -72,7 +61,8 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
     try compiler_args_list.append("--platform");
     // for now assume Windows
     // TODO get compile time platform
-    try compiler_args_list.append("windows");
+    // try compiler_args_list.append("windows");
+    try compiler_args_list.append("osx");
     try compiler_args_list.append("--profile");
     // for now we assume GLSL 400
     try compiler_args_list.append("150");
@@ -81,7 +71,7 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
         try compiler_args.appendSlice(arg);
         try compiler_args.append(' ');
     }
-    // std.debug.print("Shader compiler args: {s}\n", .{compiler_args.items});
+    std.debug.print("Shader compiler args: {s}\n", .{compiler_args.items});
 
     var cwd = std.fs.cwd();
     const exec_result = try ChildProcess.exec(.{
@@ -94,7 +84,7 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
     defer allocator.free(exec_result.stdout);
     defer allocator.free(exec_result.stderr);
 
-    const compiled_shader_file = try std.fs.cwd().openFile(bin_path.bytes.items, .{});
+    const compiled_shader_file = try std.fs.cwd().openFile(bin_path.bytes(), .{});
     const compiled_shader_buffer = try compiled_shader_file.readToEndAlloc(allocator, 5 * 1024 * 1024);
     compiled_shader_file.close();
     return compiled_shader_buffer;

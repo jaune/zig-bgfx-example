@@ -12,7 +12,7 @@ const bgfx = @import("bgfx");
 
 // const zigstr = @import("zigstr");
 const zm = @import("zmath");
-// const sc = @import("shader_compiler.zig");
+const sc = @import("shader_compiler.zig");
 
 const builtin = @import("builtin");
 
@@ -94,7 +94,6 @@ pub fn main() !void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
-    _ = allocator;
 
     c.SDL_Log("Creating BGFX State");
 
@@ -136,25 +135,23 @@ pub fn main() !void {
     const includes = [_][]const u8{
         "assets/shaders/include",
     };
-    _ = includes;
 
     const defines = [_][]const u8{};
-    _ = defines;
 
-    // const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
-    // defer allocator.free(compiledVertexShaderBuffer);
+    const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
+    defer allocator.free(compiledVertexShaderBuffer);
 
-    // const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
-    // defer allocator.free(compiledFragmentShaderBuffer);
+    const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
+    defer allocator.free(compiledFragmentShaderBuffer);
 
-    // const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
-    // assert(vsh.idx != std.math.maxInt(c_ushort));
+    const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
+    assert(vsh.idx != std.math.maxInt(c_ushort));
 
-    // const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
-    // assert(fsh.idx != std.math.maxInt(c_ushort));
+    const fsh = bgfx.createShader(bgfx.makeRef(compiledFragmentShaderBuffer.ptr, @intCast(compiledFragmentShaderBuffer.len)));
+    assert(fsh.idx != std.math.maxInt(c_ushort));
 
-    // const programHandle = bgfx.createProgram(vsh, fsh, true);
-    // defer bgfx.destroyProgram(programHandle);
+    const programHandle = bgfx.createProgram(vsh, fsh, true);
+    defer bgfx.destroyProgram(programHandle);
 
     const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
 
@@ -198,8 +195,7 @@ pub fn main() !void {
                 bgfx.setVertexBuffer(0, vbh, 0, cube_vertices.len);
                 bgfx.setIndexBuffer(ibh, 0, cube_tri_list.len);
                 bgfx.setState(state, 0);
-                // bgfx.submit(0, programHandle, 0, 255);
-                // bgfx.submit(0, 0, 0, 255);
+                bgfx.submit(0, programHandle, 0, 255);
             }
         }
 
