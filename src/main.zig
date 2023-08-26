@@ -137,11 +137,19 @@ pub fn main() !void {
     };
 
     const defines = [_][]const u8{};
+    _ = defines;
+    _ = includes;
 
-    const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
+    // const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
+    // defer allocator.free(compiledVertexShaderBuffer);
+    //
+    // const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
+    // defer allocator.free(compiledFragmentShaderBuffer);
+
+    const compiledVertexShaderBuffer = try sc.loadShader("assets/shaders/cubes/vs_cubes.o", allocator);
     defer allocator.free(compiledVertexShaderBuffer);
 
-    const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
+    const compiledFragmentShaderBuffer = try sc.loadShader("assets/shaders/cubes/fs_cubes.o", allocator);
     defer allocator.free(compiledFragmentShaderBuffer);
 
     const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));

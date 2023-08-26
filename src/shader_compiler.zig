@@ -19,6 +19,14 @@ fn shaderTypeToString(shaderType: ShaderTypes) []const u8 {
     };
 }
 
+pub fn loadShader(path: []const u8, allocator: Allocator) ![]u8
+{
+    const compiled_shader_file = try std.fs.cwd().openFile(path, .{});
+    const compiled_shader_buffer = try compiled_shader_file.readToEndAlloc(allocator, 5 * 1024 * 1024);
+    compiled_shader_file.close();
+    return compiled_shader_buffer;
+}
+
 pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const []const u8, defines: []const []const u8, shaderType: ShaderTypes, allocator: Allocator) ![]u8 {
     var compiler_args_list = ArrayList([]const u8).init(allocator);
     defer compiler_args_list.deinit();
