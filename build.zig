@@ -6,10 +6,6 @@ const bgfx = @import("build_bgfx.zig");
 const sc = @import("build_shader_compiler.zig");
 // const tp = @import("build_texture_packer.zig");
 
-// const zigstr = @import("build_zigstr.zig");
-// const zmath = @import("3rdparty/zmath/build.zig");
-// const zgui = @import("3rdparty/zgui/build.zig");
-
 const LibExeObjStep = std.build.LibExeObjStep;
 const Builder = std.build.Builder;
 const CrossTarget = std.zig.CrossTarget;
@@ -27,10 +23,6 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // EXE
-    // const exe = b.addExecutable("ziggy", "src/main.zig");
-    // exe.setTarget(target);
-    // exe.setBuildMode(mode);
-
      const exe = b.addExecutable(.{
         .name = "ziggy",
         .root_source_file = .{ .path = "src/main.zig" },
@@ -68,7 +60,7 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("version");
     }
 
-    // zmath
+    // zmath and zmath_options
     const zmath_options_step = b.addOptions();
     zmath_options_step.addOption(
         bool,
@@ -77,8 +69,6 @@ pub fn build(b: *std.Build) void {
     );
 
     const zmath_options = zmath_options_step.createModule();
-
-    // exe.addPackage(zmath.pkg);
     const zmath = b.addModule("zmath", .{
         .source_file = .{ .path = "3rdparty/zmath/src/zmath.zig" },
         .dependencies = &.{
@@ -86,12 +76,6 @@ pub fn build(b: *std.Build) void {
         },
     });
     exe.addModule("zmath", zmath);
-
-    // const zigstr = b.addModule("zigstr", .{
-    //     .source_file = .{ .path = "3rdparty/zigstr/src/Zigstr.zig" },
-    //     .dependencies = &.{},
-    // });
-    // exe.addModule("zigstr", zigstr);
 
     const zigstr = b.dependency("zigstr", .{
         .target = target,
@@ -102,17 +86,9 @@ pub fn build(b: *std.Build) void {
     bx.link(exe);
     bimg.link(exe);
     bgfx.link(exe);
-    // zigstr.link(exe);
-
-    // zgui
-    // const zgui_options = zgui.BuildOptionsStep.init(b, .{ .backend = .no_backend });
-    // const zgui_pkg = zgui.getPkg(&.{zgui_options.getPkg()});
-    // exe.addPackage(zgui_pkg);
-    // zgui.link(exe, zgui_options);
 
     exe.linkSystemLibrary("c");
     exe.linkSystemLibrary("c++");
-    // exe.install();
 
     const install_exe = b.addInstallArtifact(exe, .{});
     b.getInstallStep().dependOn(&install_exe.step);

@@ -137,20 +137,23 @@ pub fn main() !void {
     };
 
     const defines = [_][]const u8{};
-    _ = defines;
-    _ = includes;
+    // _ = defines;
+    // _ = includes;
 
-    // const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
-    // defer allocator.free(compiledVertexShaderBuffer);
-    //
-    // const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
-    // defer allocator.free(compiledFragmentShaderBuffer);
+    c.SDL_Log("Loading Shaders");
 
-    const compiledVertexShaderBuffer = try sc.loadShader("assets/shaders/cubes/vs_cubes.o", allocator);
+    const compiledVertexShaderBuffer = try sc.compileShader("assets/shaders/cubes/vs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Vertex, allocator);
     defer allocator.free(compiledVertexShaderBuffer);
 
-    const compiledFragmentShaderBuffer = try sc.loadShader("assets/shaders/cubes/fs_cubes.o", allocator);
+    const compiledFragmentShaderBuffer = try sc.compileShader("assets/shaders/cubes/fs_cubes.sc", "assets/shaders/cubes/varying.def.sc", &includes, &defines, sc.ShaderTypes.Fragment, allocator);
     defer allocator.free(compiledFragmentShaderBuffer);
+
+
+    // const compiledVertexShaderBuffer = try sc.loadShader("assets/shaders/cubes/vs_cubes.o", allocator);
+    // defer allocator.free(compiledVertexShaderBuffer);
+    //
+    // const compiledFragmentShaderBuffer = try sc.loadShader("assets/shaders/cubes/fs_cubes.o", allocator);
+    // defer allocator.free(compiledFragmentShaderBuffer);
 
     const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
     assert(vsh.idx != std.math.maxInt(c_ushort));
@@ -182,8 +185,6 @@ pub fn main() !void {
             }
         }
 
-        c.SDL_Log("Rendering Frame");
-
         bgfx.setViewTransform(0, &zm.matToArr(viewMtx), &zm.matToArr(projMtx));
         bgfx.setViewRect(0, 0, 0, WIDTH, HEIGHT);
         bgfx.touch(0);
@@ -194,7 +195,7 @@ pub fn main() !void {
         while (yy < 11) : (yy += 1.0) {
             var xx: f32 = 0;
             while (xx < 11) : (xx += 1.0) {
-                const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 0.0);
+                const trans = zm.translation(-15.0 + xx * 3.0, -15 + yy * 3.0, 3.0 * @sin(3.0 * time + xx + yy));
                 const rotX = zm.rotationX(time + xx * 0.21);
                 const rotY = zm.rotationY(time + yy * 0.37);
                 const rotXY = zm.mul(rotX, rotY);
@@ -211,6 +212,8 @@ pub fn main() !void {
 
         c.SDL_Delay(17);
     }
+
+    c.SDL_Log("Shutting down");
 }
 
 test "Main" {

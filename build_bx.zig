@@ -18,8 +18,6 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     };
 
     const bx_lib = exe.step.owner.addStaticLibrary(.{ .name = "bx", .target = exe.target, .optimize = exe.optimize});
-    // bx_lib.setTarget(exe.target);
-    // bx_lib.setBuildMode(exe.build_mode);
 
     addBxIncludes(bx_lib);
     bx_lib.addIncludePath(.{ .path = bx_path ++ "3rdparty/"});
@@ -34,7 +32,6 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
 
     const bx_lib_artifact = exe.step.owner.addInstallArtifact(bx_lib, .{});
     exe.step.owner.getInstallStep().dependOn(&bx_lib_artifact.step);
-    //bx_lib.install();
     return bx_lib;
 }
 

@@ -19,7 +19,6 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     };
 
     const bimg_lib = exe.step.owner.addStaticLibrary(.{ .name = "bimg", .target = exe.target, .optimize = exe.optimize});
-    // const bimg_lib = exe.builder.addStaticLibrary("bimg", null);
     addBimgIncludes(bimg_lib);
     bimg_lib.addIncludePath(.{ .path = bimg_path ++ "3rdparty/"});
     bimg_lib.addIncludePath(.{ .path = bimg_path ++ "3rdparty/astc-encoder/"});
@@ -54,10 +53,7 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     bimg_lib.want_lto = false;
     bimg_lib.linkSystemLibrary("c");
     bimg_lib.linkSystemLibrary("c++");
-    // bimg_lib.setTarget(exe.target);
-    // bimg_lib.setBuildMode(exe.build_mode);
     bx.link(bimg_lib);
-    // bimg_lib.install();
 
     const bimg_lib_artifact = exe.step.owner.addInstallArtifact(bimg_lib, .{});
     exe.step.owner.getInstallStep().dependOn(&bimg_lib_artifact.step);

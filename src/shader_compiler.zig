@@ -28,6 +28,8 @@ pub fn loadShader(path: []const u8, allocator: Allocator) ![]u8
 }
 
 pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const []const u8, defines: []const []const u8, shaderType: ShaderTypes, allocator: Allocator) ![]u8 {
+    std.debug.print("Compiling shader: {s}\n", .{path});
+
     var compiler_args_list = ArrayList([]const u8).init(allocator);
     defer compiler_args_list.deinit();
 
@@ -89,8 +91,13 @@ pub fn compileShader(path: []const u8, varyings: []const u8, includes: []const [
         .cwd_dir = cwd,
     });
 
+    std.debug.print("Shader compiler output: {s}\n", .{exec_result.stdout});
+    std.debug.print("Shader compiler error output: {s}\n", .{exec_result.stderr});
+
     defer allocator.free(exec_result.stdout);
     defer allocator.free(exec_result.stderr);
+
+    std.debug.print("Compiled shader: {s}\n", .{bin_path});
 
     const compiled_shader_file = try std.fs.cwd().openFile(bin_path.bytes(), .{});
     const compiled_shader_buffer = try compiled_shader_file.readToEndAlloc(allocator, 5 * 1024 * 1024);
