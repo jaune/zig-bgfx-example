@@ -16,13 +16,13 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
         "-fno-rtti",
         "-ffast-math",
         "-DBX_CONFIG_DEBUG",
-    };    
+    };
 
-    const bimg_lib = exe.builder.addStaticLibrary("bimg", null);
+    const bimg_lib = exe.step.owner.addStaticLibrary(.{ .name = "bimg", .target = exe.target, .optimize = exe.optimize});
     addBimgIncludes(bimg_lib);
-    bimg_lib.addIncludePath(bimg_path ++ "3rdparty/");
-    bimg_lib.addIncludePath(bimg_path ++ "3rdparty/astc-encoder/");
-    bimg_lib.addIncludePath(bimg_path ++ "3rdparty/astc-encoder/include/");
+    bimg_lib.addIncludePath(.{ .path = bimg_path ++ "3rdparty/"});
+    bimg_lib.addIncludePath(.{ .path = bimg_path ++ "3rdparty/astc-encoder/"});
+    bimg_lib.addIncludePath(.{ .path = bimg_path ++ "3rdparty/astc-encoder/include/"});
     bimg_lib.addCSourceFiles(&.{
         bimg_path ++ "src/image.cpp",
         bimg_path ++ "src/image_gnf.cpp",
@@ -53,15 +53,16 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     bimg_lib.want_lto = false;
     bimg_lib.linkSystemLibrary("c");
     bimg_lib.linkSystemLibrary("c++");
-    bimg_lib.setTarget(exe.target);
-    bimg_lib.setBuildMode(exe.build_mode);
     bx.link(bimg_lib);
-    bimg_lib.install();
+
+    const bimg_lib_artifact = exe.step.owner.addInstallArtifact(bimg_lib, .{});
+    exe.step.owner.getInstallStep().dependOn(&bimg_lib_artifact.step);
+
     return bimg_lib;
 }
 
 fn addBimgIncludes(exe: *std.build.LibExeObjStep) void {
-    exe.addIncludePath(thisDir() ++ "/" ++ bimg_path ++ "include/");
+    exe.addIncludePath(.{ .path = thisDir() ++ "/" ++ bimg_path ++ "include/"});
 }
 
 inline fn thisDir() []const u8 {

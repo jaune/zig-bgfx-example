@@ -23,8 +23,9 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     };
 
     const fcpp_path = "3rdparty/bgfx/3rdparty/fcpp/";
-    const fcpp_lib = b.addStaticLibrary("fcpp", null);
-    fcpp_lib.addIncludePath(fcpp_path);
+    const fcpp_lib = b.addStaticLibrary(.{ .name = "fcpp", .target = target, .optimize = build_mode});
+
+    fcpp_lib.addIncludePath(.{ .path = fcpp_path});
     fcpp_lib.addCSourceFiles(&.{
         fcpp_path ++ "cpp1.c",
         fcpp_path ++ "cpp2.c",
@@ -36,9 +37,9 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
 
     fcpp_lib.want_lto = false;
     fcpp_lib.linkSystemLibrary("c++");
-    fcpp_lib.setTarget(target);
-    fcpp_lib.setBuildMode(build_mode);
-    fcpp_lib.install();
+
+    const fcpp_lib_artifact = b.addInstallArtifact(fcpp_lib, .{});
+    b.getInstallStep().dependOn(&fcpp_lib_artifact.step);
 
     //spirv-opt
     const spirv_opt_cxx_options = [_][]const u8{
@@ -49,12 +50,12 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     };
 
     const spirv_opt_path = "3rdparty/bgfx/3rdparty/spirv-tools/";
-    const spirv_opt_lib = b.addStaticLibrary("spirv-opt", null);
-    spirv_opt_lib.addIncludePath(spirv_opt_path);
-    spirv_opt_lib.addIncludePath(spirv_opt_path ++ "include");
-    spirv_opt_lib.addIncludePath(spirv_opt_path ++ "include/generated");
-    spirv_opt_lib.addIncludePath(spirv_opt_path ++ "source");
-    spirv_opt_lib.addIncludePath("3rdparty/bgfx/3rdparty/spirv-headers/include");
+    const spirv_opt_lib = b.addStaticLibrary(.{ .name = "spirv-opt", .target = target, .optimize = build_mode});
+    spirv_opt_lib.addIncludePath(.{ .path = spirv_opt_path });
+    spirv_opt_lib.addIncludePath(.{ .path = spirv_opt_path ++ "include" });
+    spirv_opt_lib.addIncludePath(.{ .path = spirv_opt_path ++ "include/generated" });
+    spirv_opt_lib.addIncludePath(.{ .path = spirv_opt_path ++ "source" });
+    spirv_opt_lib.addIncludePath(.{ .path = "3rdparty/bgfx/3rdparty/spirv-headers/include" });
 
     spirv_opt_lib.addCSourceFiles(&.{
         spirv_opt_path ++ "source/assembly_grammar.cpp",
@@ -268,9 +269,9 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
 
     spirv_opt_lib.want_lto = false;
     spirv_opt_lib.linkSystemLibrary("c++");
-    spirv_opt_lib.setTarget(target);
-    spirv_opt_lib.setBuildMode(build_mode);
-    spirv_opt_lib.install();
+
+    const spirv_opt_lib_artifact = b.addInstallArtifact(spirv_opt_lib, .{});
+    b.getInstallStep().dependOn(&spirv_opt_lib_artifact.step);
 
     // spriv-cross
     const spirv_cross_cxx_options = [_][]const u8{
@@ -282,8 +283,8 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     };
 
     const spirv_cross_path = "3rdparty/bgfx/3rdparty/spirv-cross/";
-    const spirv_cross_lib = b.addStaticLibrary("spirv-cross", null);
-    spirv_cross_lib.addIncludePath(spirv_cross_path ++ "include");
+    const spirv_cross_lib = b.addStaticLibrary(.{ .name = "spirv-cross", .target = target, .optimize = build_mode});
+    spirv_cross_lib.addIncludePath(.{ .path = spirv_cross_path ++ "include"});
     spirv_cross_lib.addCSourceFiles(&.{
         spirv_cross_path ++ "spirv_cfg.cpp",
         spirv_cross_path ++ "spirv_cpp.cpp",
@@ -299,9 +300,9 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
 
     spirv_cross_lib.want_lto = false;
     spirv_cross_lib.linkSystemLibrary("c++");
-    spirv_cross_lib.setTarget(target);
-    spirv_cross_lib.setBuildMode(build_mode);
-    spirv_cross_lib.install();
+
+    const spirv_cross_lib_artifact = b.addInstallArtifact(spirv_cross_lib, .{});
+    b.getInstallStep().dependOn(&spirv_cross_lib_artifact.step);
 
     // glslang
     const glslang_cxx_options = [_][]const u8{
@@ -314,12 +315,12 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     };
 
     const glslang_path = "3rdparty/bgfx/3rdparty/glslang/";
-    const glslang_lib = b.addStaticLibrary("glslang", null);
-    glslang_lib.addIncludePath("3rdparty/bgfx/3rdparty");
-    glslang_lib.addIncludePath(glslang_path);
-    glslang_lib.addIncludePath(glslang_path ++ "include");
-    glslang_lib.addSystemIncludePath(spirv_opt_path ++ "include");
-    glslang_lib.addSystemIncludePath(spirv_opt_path ++ "source");
+    const glslang_lib = b.addStaticLibrary(.{ .name = "glslang", .target = target, .optimize = build_mode});
+    glslang_lib.addIncludePath(.{ .path = "3rdparty/bgfx/3rdparty"});
+    glslang_lib.addIncludePath(.{ .path = glslang_path});
+    glslang_lib.addIncludePath(.{ .path = glslang_path ++ "include"});
+    glslang_lib.addSystemIncludePath(.{ .path = spirv_opt_path ++ "include"});
+    glslang_lib.addSystemIncludePath(.{ .path = spirv_opt_path ++ "source"});
     glslang_lib.addCSourceFiles(&.{
         glslang_path ++ "OGLCompilersDLL/InitializeDll.cpp",
         glslang_path ++ "SPIRV/GlslangToSpv.cpp",
@@ -371,17 +372,17 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     }, &glslang_cxx_options);
 
     if (target.isWindows()) {
-        glslang_lib.addCSourceFile(glslang_path ++ "glslang/OSDependent/Windows/ossource.cpp", &glslang_cxx_options);
+        glslang_lib.addCSourceFile(.{ .file = .{ .path = glslang_path ++ "glslang/OSDependent/Windows/ossource.cpp"}, .flags = &glslang_cxx_options});
     }
     if (target.isLinux() or target.isDarwin()) {
-        glslang_lib.addCSourceFile(glslang_path ++ "glslang/OSDependent/Unix/ossource.cpp", &glslang_cxx_options);
+        glslang_lib.addCSourceFile(.{ .file = .{ .path = glslang_path ++ "glslang/OSDependent/Unix/ossource.cpp"}, .flags = &glslang_cxx_options});
     }
 
     glslang_lib.want_lto = false;
     glslang_lib.linkSystemLibrary("c++");
-    glslang_lib.setTarget(target);
-    glslang_lib.setBuildMode(build_mode);
-    glslang_lib.install();
+
+    const glslang_lib_artifact = b.addInstallArtifact(glslang_lib, .{});
+    b.getInstallStep().dependOn(&glslang_lib_artifact.step);
 
     // glslang
     const glsl_optimizer_cxx_options = [_][]const u8{
@@ -420,12 +421,12 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     };
 
     const glsl_optimizer_path = "3rdparty/bgfx/3rdparty/glsl-optimizer/";
-    const glsl_optimizer_lib = b.addStaticLibrary("glsl-optimizer", null);
-    glsl_optimizer_lib.addIncludePath(glsl_optimizer_path ++ "include");
-    glsl_optimizer_lib.addIncludePath(glsl_optimizer_path ++ "src");
-    glsl_optimizer_lib.addIncludePath(glsl_optimizer_path ++ "src/mesa");
-    glsl_optimizer_lib.addIncludePath(glsl_optimizer_path ++ "src/mapi");
-    glsl_optimizer_lib.addIncludePath(glsl_optimizer_path ++ "src/glsl");
+    const glsl_optimizer_lib = b.addStaticLibrary(.{ .name = "glsl-optimizer", .target = target, .optimize = build_mode});
+    glsl_optimizer_lib.addIncludePath(.{ .path = glsl_optimizer_path ++ "include"});
+    glsl_optimizer_lib.addIncludePath(.{ .path = glsl_optimizer_path ++ "src"});
+    glsl_optimizer_lib.addIncludePath(.{ .path = glsl_optimizer_path ++ "src/mesa"});
+    glsl_optimizer_lib.addIncludePath(.{ .path = glsl_optimizer_path ++ "src/mapi"});
+    glsl_optimizer_lib.addIncludePath(.{ .path = glsl_optimizer_path ++ "src/glsl"});
 
     // add C++ files
     glsl_optimizer_lib.addCSourceFiles(&.{
@@ -541,9 +542,9 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
 
     glsl_optimizer_lib.want_lto = false;
     glsl_optimizer_lib.linkSystemLibrary("c++");
-    glsl_optimizer_lib.setTarget(target);
-    glsl_optimizer_lib.setBuildMode(build_mode);
-    glsl_optimizer_lib.install();
+
+    const glsl_optimizer_lib_artifact = b.addInstallArtifact(glsl_optimizer_lib, .{});
+    b.getInstallStep().dependOn(&glsl_optimizer_lib_artifact.step);
 
     const shaderc_cxx_options = [_][]const u8{
         "-D__STDC_LIMIT_MACROS",
@@ -554,21 +555,33 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
         "-fno-sanitize=undefined",
     };
     const bgfx_path = "3rdparty/bgfx/";
-    const exe = b.addExecutable("shaderc", null);
+    const bx_path = "3rdparty/bx/";
 
-    exe.addIncludePath("3rdparty/bimg/include");
-    exe.addIncludePath(bgfx_path ++ "include");
-    exe.addIncludePath(bgfx_path ++ "src");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/dxsdk/include");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/fcpp");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/glslang/glslang/Public");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/glslang/glslang/Include");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/glslang");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/glsl-optimizer/include");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/glsl-optimizer/src/glsl");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/spirv-cross");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/spirv-tools/include");
-    exe.addIncludePath(bgfx_path ++ "3rdparty/webgpu/include");
+    const exe = b.addExecutable(.{
+        .name = "shaderc",
+        .target = target,
+        .optimize = build_mode,
+    });
+
+    exe.addIncludePath(.{ .path = bx_path ++ "3rdparty"});
+    exe.addIncludePath(.{ .path = bx_path ++ "include"});
+    exe.addIncludePath(.{ .path = bx_path ++ "/include/compat/osx"});
+    exe.addIncludePath(.{ .path = "3rdparty/bimg/include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "src"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/dxsdk/include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/fcpp"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/glslang/glslang/Public"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/glslang/glslang/Include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/glslang"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/glsl-optimizer/include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/glsl-optimizer/src/glsl"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/spirv-cross"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/spirv-tools/include"});
+    exe.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/webgpu/include"});
+    exe.addCSourceFiles(&.{
+        bx_path ++ "src/amalgamated.cpp",
+    }, &shaderc_cxx_options);
     exe.addCSourceFiles(&.{
         bgfx_path ++ "src/shader.cpp",
         bgfx_path ++ "src/shader_dx9bc.cpp",
@@ -584,10 +597,7 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
     }, &shaderc_cxx_options);
 
     exe.want_lto = false;
-    exe.setTarget(target);
-    exe.setBuildMode(build_mode);
 
-    bx.link(exe);
     exe.linkLibrary(fcpp_lib);
     exe.linkLibrary(glslang_lib);
     exe.linkLibrary(glsl_optimizer_lib);
@@ -600,6 +610,11 @@ pub fn build(b: *Builder, target: std.zig.CrossTarget, build_mode: std.builtin.M
         exe.linkFramework("Foundation");
     }
 
-    exe.install();
+    const install_exe = b.addInstallArtifact(exe, .{});
+    b.getInstallStep().dependOn(&install_exe.step);
     return exe;
+}
+
+inline fn thisDir() []const u8 {
+    return comptime std.fs.path.dirname(@src().file) orelse ".";
 }

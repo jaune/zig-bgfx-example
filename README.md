@@ -1,8 +1,10 @@
-# ziggy
-An experimental and small 3d engine (hopefully some day) written in Zig with the purpose of learning more about the language and interoperability with C/C++.
+# Zig + BGFX Example Project
+A small example project that shows how to use BGFX from Zig, based on Ziggy (https://github.com/heretique/ziggy)
 
-
+## Notes
+- Building will build BGFX's shader compiler called `shaderc` alongside the app.
+- Precompiled shaders have been included for OpenGL/OSX - these are the .bin files under assets/shaders/cubes.
+  - To run on other platforms, replace these files with your own compiled shaders.
 
 ### TODO
- - update bgfx bindings to be more idiomatic zig and make it a hard boundary between C/C++ and Zig
- - make imgui work
+- Maybe there could be a build step that compiles shaders?
