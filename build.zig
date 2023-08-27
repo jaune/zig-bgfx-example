@@ -32,11 +32,12 @@ pub fn build(b: *std.Build) void {
 
     // sdl2
     if (target.isDarwin()){
-        // Add SDL2 (OSX only version, install via Homebrew)
-        exe.addIncludePath(.{ .path = "/usr/local/include/SDL2"});
-        exe.linkSystemLibrary("sdl2");
+        // Add SDL2, include path may vary
+        // exe.addIncludePath(.{ .path = "/usr/local/include/SDL2"});
+        // exe.linkSystemLibrary("sdl2");
 
-        // exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx"});
+        exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx"});
+        exe.linkSystemLibrary("sdl2");
         // exe.linkFramework("sdl2");
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreFoundation");
@@ -60,14 +61,13 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("version");
     }
 
-    // zmath and zmath_options
+    // zmath - not a package yet, so manually make the module
     const zmath_options_step = b.addOptions();
     zmath_options_step.addOption(
         bool,
         "enable_cross_platform_determinism",
         true,
     );
-
     const zmath_options = zmath_options_step.createModule();
     const zmath = b.addModule("zmath", .{
         .source_file = .{ .path = "3rdparty/zmath/src/zmath.zig" },
@@ -77,12 +77,14 @@ pub fn build(b: *std.Build) void {
     });
     exe.addModule("zmath", zmath);
 
+    // zigstr dependency, pulled via build.zig.zon
     const zigstr = b.dependency("zigstr", .{
         .target = target,
         .optimize = optimize,
     });
     exe.addModule("zigstr", zigstr.module("zigstr"));
 
+    // Link the bgfx libs
     bx.link(exe);
     bimg.link(exe);
     bgfx.link(exe);
@@ -93,11 +95,8 @@ pub fn build(b: *std.Build) void {
     const install_exe = b.addInstallArtifact(exe, .{});
     b.getInstallStep().dependOn(&install_exe.step);
 
-    // shader compiler
+    // build the shader compiler
     _ = sc.build(b, target, optimize);
-
-    // texture packer
-    // _ = tp.build(b, target, optimize);
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
@@ -108,13 +107,6 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
-
-    // const exe_tests = b.addTest("src/main.zig");
-    // exe_tests.setTarget(target);
-    // exe_tests.setBuildMode(mode);
-    //
-    // const test_step = b.step("test", "Run unit tests");
-    // test_step.dependOn(&exe_tests.step);
 }
 
 inline fn thisDir() []const u8 {
