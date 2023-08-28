@@ -142,10 +142,10 @@ pub fn main() !void {
 
     c.SDL_Log("Loading Shaders");
 
-    const compiledVertexShaderBuffer = try loadCompiledShader("assets/shaders/cubes/vs_cubes.bin", allocator);
+    const compiledVertexShaderBuffer = try loadCompiledShader("assets/shaders/cubes/vs_cubes.sc.bin", allocator);
     defer allocator.free(compiledVertexShaderBuffer);
 
-    const compiledFragmentShaderBuffer = try loadCompiledShader("assets/shaders/cubes/fs_cubes.bin", allocator);
+    const compiledFragmentShaderBuffer = try loadCompiledShader("assets/shaders/cubes/fs_cubes.sc.bin", allocator);
     defer allocator.free(compiledFragmentShaderBuffer);
 
     const vsh = bgfx.createShader(bgfx.makeRef(compiledVertexShaderBuffer.ptr, @intCast(compiledVertexShaderBuffer.len)));
