@@ -97,7 +97,6 @@ pub fn build(b: *std.Build) void {
 
     // build the shader compiler
     const shader_compiler_exe = sc.build(b, target, optimize);
-    _ = shader_compiler_exe;
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
@@ -109,9 +108,82 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    // const compile_shaders_step = b.step("shaders", "Compile Shaders");
-    // compile_shaders_step.makeFn = compileShaders;
-    // compile_shaders_step.dependOn(&install_exe.step);
+    addShaderCompilerToBuild(b, shader_compiler_exe, target) catch { };
+}
+
+pub fn addShaderCompilerToBuild(b: *std.Build, shader_compiler_exe: *std.Build.LibExeObjStep, target: std.zig.CrossTarget) !void {
+    const compile_shaders_step = b.step("shaders", "Compile Shaders");
+    compile_shaders_step.dependOn(b.getInstallStep());
+
+    var files = std.ArrayList([]const u8).init(b.allocator);
+    defer files.deinit();
+
+    // TODO: Maybe iterate over all directories under shaders?
+    const shader_dir = "assets/shaders/cubes";
+
+    // Find all of the shader files
+    var dir = try std.fs.cwd().openIterableDir(shader_dir, .{});
+    var it = dir.iterate();
+    while (try it.next()) |file| {
+        if (file.kind != .file) {
+            continue;
+        }
+
+        const path = try std.fs.path.join(b.allocator, &[_][]const u8{shader_dir, file.name});
+        const extension = std.fs.path.extension(file.name);
+
+        // Only consider .sc files
+        if(!std.mem.eql(u8, extension, ".sc"))
+            continue;
+
+        // Ignore the varying definition file
+        if(std.mem.startsWith(u8, file.name, "varying.def"))
+            continue;
+
+        // Figure out the type of shader this is
+        var shader_type: []const u8 = "";
+        if(std.mem.startsWith(u8, file.name, "fs_"))
+            shader_type = "fragment";
+        if(std.mem.startsWith(u8, file.name, "vs_"))
+            shader_type = "vertex";
+
+        // Stop if no type was found!
+        if(shader_type.len == 0)
+            continue;
+
+        // Setup the output path
+        var out_path = try std.mem.concat(b.allocator, u8, &[_][]const u8{path, ".bin"});
+
+        // Run the built shader compiler on this file, with a bunch of args set
+        const run_cmd = b.addRunArtifact(shader_compiler_exe);
+        compile_shaders_step.dependOn(&run_cmd.step);
+
+        var args = std.ArrayList([]const u8).init(b.allocator);
+        defer args.deinit();
+
+        run_cmd.addArg("-f");
+        run_cmd.addArg(path);
+
+        run_cmd.addArg("-o");
+        run_cmd.addArg(out_path);
+
+        run_cmd.addArg("-i");
+        run_cmd.addArg("assets/shaders/include");
+
+        run_cmd.addArg("--type");
+        run_cmd.addArg(shader_type);
+
+        // TODO: add more platforms
+        run_cmd.addArg("--platform");
+        if (target.isDarwin())
+            run_cmd.addArg("osx");
+        if (target.isWindows())
+            run_cmd.addArg("windows");
+
+        // for now we assume GLSL 400
+        run_cmd.addArg("--profile");
+        run_cmd.addArg("150");
+    }
 }
 
 // fn compileShaders(self: *std.build.Step, progress: *std.Progress.Node) !void {
