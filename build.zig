@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) void {
 
     // EXE
      const exe = b.addExecutable(.{
-        .name = "ziggy",
+        .name = "zig-bgfx-example",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,

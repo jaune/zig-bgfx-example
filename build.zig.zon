@@ -1,5 +1,5 @@
 .{
-    .name = "ziggy",
+    .name = "zig-bgfx-example",
     .version = "0.11.1",
     .dependencies = .{
         .zigstr = .{
