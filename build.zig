@@ -108,10 +108,10 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    addShaderCompilerToBuild(b, shader_compiler_exe, target) catch { };
+    addShaderCompilerTaskToBuild(b, shader_compiler_exe, target) catch { };
 }
 
-pub fn addShaderCompilerToBuild(b: *std.Build, shader_compiler_exe: *std.Build.LibExeObjStep, target: std.zig.CrossTarget) !void {
+pub fn addShaderCompilerTaskToBuild(b: *std.Build, shader_compiler_exe: *std.Build.LibExeObjStep, target: std.zig.CrossTarget) !void {
     const compile_shaders_step = b.step("shaders", "Compile Shaders");
     compile_shaders_step.dependOn(b.getInstallStep());
 
