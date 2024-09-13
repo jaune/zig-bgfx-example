@@ -162,9 +162,18 @@ pub fn main() !void {
     defer bgfx.destroyProgram(programHandle);
 
     // Create view matrices
-    const viewMtx = zm.lookAtRh(zm.f32x4(0.0, 0.0, -50.0, 1.0), zm.f32x4(0.0, 0.0, 0.0, 1.0), zm.f32x4(0.0, 1.0, 0.0, 0.0));
+    const viewMtx = zm.lookAtRh(
+        zm.f32x4(0.0, 0.0, -50.0, 1.0),
+        zm.f32x4(0.0, 0.0, 0.0, 1.0),
+        zm.f32x4(0.0, 1.0, 0.0, 0.0),
+    );
 
-    const projMtx = zm.perspectiveFovRhGl(0.25 * math.pi, aspect_ratio, 0.1, 100.0);
+    const projMtx = zm.perspectiveFovRhGl(
+        0.25 * math.pi,
+        aspect_ratio,
+        0.1,
+        100.0,
+    );
     const state = 0 | bgfx.StateFlags_WriteRgb | bgfx.StateFlags_WriteA | bgfx.StateFlags_WriteZ | bgfx.StateFlags_DepthTestLess | bgfx.StateFlags_CullCcw | bgfx.StateFlags_Msaa;
 
     var quit = false;
