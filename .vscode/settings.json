@@ -1,4 +1,10 @@
 {
+    "zig.path": "${workspaceFolder}/.bin/zig/zig",
+    "terminal.integrated.env.osx": {
+      "PATH": "${workspaceFolder}/.bin/zig/:$PATH"
+    },
+    "git.ignoreLimitWarning": true,
+    "zig.zls.path": "${workspaceFolder}/.bin/zls/bin/zls",
     "cSpell.ignoreWords": [
         "rdparty"
     ],

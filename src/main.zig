@@ -98,7 +98,7 @@ pub fn main() !void {
     c.SDL_Log("Creating BGFX Init State");
 
     var bgfxInit = std.mem.zeroes(bgfx.Init);
-    bgfxInit.type = bgfx.RendererType.OpenGL;
+    bgfxInit.type = bgfx.RendererType.Metal;
     bgfxInit.resolution.width = WIDTH;
     bgfxInit.resolution.height = HEIGHT;
     bgfxInit.limits.transientIbSize = 1 << 20;
@@ -171,7 +171,7 @@ pub fn main() !void {
     while (!quit) {
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
-            switch (event.@"type") {
+            switch (event.type) {
                 c.SDL_QUIT => {
                     c.SDL_Log("Main Loop Stopping");
                     quit = true;
@@ -209,8 +209,7 @@ pub fn main() !void {
     c.SDL_Log("Shutting down");
 }
 
-pub fn loadCompiledShader(path: []const u8, allocator: std.mem.Allocator) ![]u8
-{
+pub fn loadCompiledShader(path: []const u8, allocator: std.mem.Allocator) ![]u8 {
     const compiled_shader_file = try std.fs.cwd().openFile(path, .{});
     const compiled_shader_buffer = try compiled_shader_file.readToEndAlloc(allocator, 5 * 1024 * 1024);
     compiled_shader_file.close();

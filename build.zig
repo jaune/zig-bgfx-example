@@ -23,7 +23,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // EXE
-     const exe = b.addExecutable(.{
+    const exe = b.addExecutable(.{
         .name = "zig-bgfx-example",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
@@ -31,14 +31,12 @@ pub fn build(b: *std.Build) void {
     });
 
     // sdl2
-    if (target.isDarwin()){
-        // Add SDL2, include path may vary
-        // exe.addIncludePath(.{ .path = "/usr/local/include/SDL2"});
-        // exe.linkSystemLibrary("sdl2");
+    if (target.isDarwin()) {
+        exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx" });
 
-        exe.addFrameworkPath(.{ .path = "3rdparty/sdl2/osx"});
-        exe.linkSystemLibrary("sdl2");
-        // exe.linkFramework("sdl2");
+        exe.addRPath(.{ .path = "3rdparty/sdl2/osx" });
+
+        exe.linkFramework("sdl2");
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreFoundation");
         exe.linkFramework("Cocoa");
@@ -46,10 +44,9 @@ pub fn build(b: *std.Build) void {
         exe.linkFramework("OpenGL");
         exe.linkFramework("IOKit");
         exe.linkFramework("Metal");
-    }
-    else if (target.isWindows()) {
-        exe.addIncludePath(.{ .path = "3rdparty/sdl2/windows/include"});
-        exe.addLibraryPath(.{ .path = "3rdparty/sdl2/windows/win64"});
+    } else if (target.isWindows()) {
+        exe.addIncludePath(.{ .path = "3rdparty/sdl2/windows/include" });
+        exe.addLibraryPath(.{ .path = "3rdparty/sdl2/windows/win64" });
         exe.linkSystemLibrary("sdl2");
         exe.linkSystemLibrary("opengl32");
         exe.linkSystemLibrary("gdi32");
@@ -108,7 +105,7 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    addShaderCompilerTaskToBuild(b, shader_compiler_exe, target) catch { };
+    addShaderCompilerTaskToBuild(b, shader_compiler_exe, target) catch {};
 }
 
 pub fn addShaderCompilerTaskToBuild(b: *std.Build, shader_compiler_exe: *std.Build.LibExeObjStep, target: std.zig.CrossTarget) !void {
@@ -129,30 +126,30 @@ pub fn addShaderCompilerTaskToBuild(b: *std.Build, shader_compiler_exe: *std.Bui
             continue;
         }
 
-        const path = try std.fs.path.join(b.allocator, &[_][]const u8{shader_dir, file.name});
+        const path = try std.fs.path.join(b.allocator, &[_][]const u8{ shader_dir, file.name });
         const extension = std.fs.path.extension(file.name);
 
         // Only consider .sc files
-        if(!std.mem.eql(u8, extension, ".sc"))
+        if (!std.mem.eql(u8, extension, ".sc"))
             continue;
 
         // Ignore the varying definition file
-        if(std.mem.startsWith(u8, file.name, "varying.def"))
+        if (std.mem.startsWith(u8, file.name, "varying.def"))
             continue;
 
         // Figure out the type of shader this is
         var shader_type: []const u8 = "";
-        if(std.mem.startsWith(u8, file.name, "fs_"))
+        if (std.mem.startsWith(u8, file.name, "fs_"))
             shader_type = "fragment";
-        if(std.mem.startsWith(u8, file.name, "vs_"))
+        if (std.mem.startsWith(u8, file.name, "vs_"))
             shader_type = "vertex";
 
         // Stop if no type was found!
-        if(shader_type.len == 0)
+        if (shader_type.len == 0)
             continue;
 
         // Setup the output path
-        var out_path = try std.mem.concat(b.allocator, u8, &[_][]const u8{path, ".bin"});
+        var out_path = try std.mem.concat(b.allocator, u8, &[_][]const u8{ path, ".bin" });
 
         // Run the built shader compiler on this file, with a bunch of args set
         const run_cmd = b.addRunArtifact(shader_compiler_exe);
@@ -175,14 +172,18 @@ pub fn addShaderCompilerTaskToBuild(b: *std.Build, shader_compiler_exe: *std.Bui
 
         // TODO: add more platforms
         run_cmd.addArg("--platform");
-        if (target.isDarwin())
+        if (target.isDarwin()) {
             run_cmd.addArg("osx");
-        if (target.isWindows())
+            run_cmd.addArg("--profile");
+            run_cmd.addArg("metal");
+        } else if (target.isWindows()) {
             run_cmd.addArg("windows");
-
-        // for now we assume GLSL 400
-        run_cmd.addArg("--profile");
-        run_cmd.addArg("150");
+            // for now we assume GLSL 400
+            run_cmd.addArg("--profile");
+            run_cmd.addArg("150");
+        } else {
+            return error.UnsupportedPlatform;
+        }
     }
 }
 
