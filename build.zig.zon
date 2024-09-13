@@ -5,12 +5,11 @@
         "src",
     },
     .dependencies = .{
-        .zigstr = .{
-            .url = "https://codeberg.org/dude_the_builder/zigstr/archive/v0.13.3.tar.gz",
-            .hash = "1220f9e0e432835046496fdaae7008f0c87e3319d4cc4f72db77494927eff9f89ce4",
-        },
-        .zmath = .{
-            .path = "3rdparty/zmath",
+        .zmath = .{ .path = "3rdparty/zmath" },
+        .zsdl = .{ .path = "3rdparty/zsdl" },
+        .@"sdl2-prebuilt" = .{
+            .url = "https://github.com/zig-gamedev/SDL2-prebuilt/archive/49b2267a0fedee9d594733617255dd979da51813.tar.gz",
+            .hash = "1220930ce0d568bd606112d38c3f16a38841a5fd9de5c224f627cd953e7febb90bfa",
         },
     },
 }

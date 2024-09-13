@@ -1,14 +1,10 @@
-const c = @cImport({
-    @cInclude("SDL2/SDL.h");
-    @cInclude("SDL2/SDL_syswm.h");
-});
-
 const std = @import("std");
 const math = std.math;
 const print = std.debug.print;
 const assert = std.debug.assert;
 const panic = std.debug.panic;
 const bgfx = @import("bgfx");
+const zsdl = @import("zsdl2");
 
 const zm = @import("zmath");
 
@@ -76,26 +72,33 @@ const cube_tri_list = [_]u16{
 };
 
 pub fn main() !void {
-    if (c.SDL_Init(c.SDL_INIT_VIDEO | c.SDL_INIT_EVENTS | c.SDL_INIT_AUDIO) != 0) {
-        c.SDL_Log("Unable to initialize SDL: %s", c.SDL_GetError());
-        return error.SDLInitializationFailed;
-    }
-    defer c.SDL_Quit();
+    try zsdl.init(.{
+        .video = true,
+        .audio = false,
+        .events = true,
+    });
+    defer zsdl.quit();
 
-    c.SDL_Log("Creating SDL Window");
+    std.debug.print("Creating SDL Window", .{});
 
-    const window = c.SDL_CreateWindow("BGFX Zig Test", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, c.SDL_WINDOW_SHOWN | c.SDL_WINDOW_OPENGL | c.SDL_WINDOW_ALLOW_HIGHDPI) orelse
-        {
-        c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
-        return error.SDLInitializationFailed;
-    };
-
-    defer _ = c.SDL_DestroyWindow(window);
+    const window = try zsdl.createWindow(
+        "BGFX Zig Test",
+        zsdl.Window.pos_undefined,
+        zsdl.Window.pos_undefined,
+        WIDTH,
+        HEIGHT,
+        .{
+            .shown = true,
+            .allow_highdpi = true,
+            .opengl = true,
+        },
+    );
+    defer window.destroy();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    c.SDL_Log("Creating BGFX Init State");
+    std.debug.print("Creating BGFX Init State", .{});
 
     var bgfxInit = std.mem.zeroes(bgfx.Init);
     bgfxInit.type = bgfx.RendererType.Metal;
@@ -105,8 +108,11 @@ pub fn main() !void {
     bgfxInit.limits.transientVbSize = 1 << 20;
     bgfxInit.debug = true;
 
-    var wmi = std.mem.zeroes(c.SDL_SysWMinfo);
-    _ = c.SDL_GetWindowWMInfo(window, &wmi);
+    var wmi: zsdl.SysWMInfo = std.mem.zeroes(zsdl.SysWMInfo);
+
+    if (!zsdl.getWindowWMInfo(window, &wmi)) {
+        return error.GetWindowWMInfoError;
+    }
 
     if (builtin.target.os.tag == .windows) {
         bgfxInit.platformData.nwh = wmi.info.win.window;
@@ -115,14 +121,14 @@ pub fn main() !void {
     }
 
     // Initialize bgfx
-    c.SDL_Log("BGFX Initializing");
+    std.debug.print("BGFX Initializing", .{});
 
     const success = bgfx.init(&bgfxInit);
     defer bgfx.shutdown();
     assert(success);
 
     // Enable Vsync
-    c.SDL_Log("BGFX - Enabling Vsync");
+    std.debug.print("BGFX - Enabling Vsync", .{});
     bgfx.reset(WIDTH, HEIGHT, bgfx.ResetFlags_Vsync, bgfxInit.resolution.format);
 
     // Enable debug text.
@@ -131,7 +137,7 @@ pub fn main() !void {
     // Set view 0 clear state.
     bgfx.setViewClear(0, bgfx.ClearFlags_Color | bgfx.ClearFlags_Depth, 0x303030ff, 1.0, 0);
 
-    c.SDL_Log("Creating buffers");
+    std.debug.print("Creating buffers", .{});
 
     const vertex_layout = PosColorVertex.layoutInit();
     const vbh = bgfx.createVertexBuffer(bgfx.makeRef(&cube_vertices, cube_vertices.len * @sizeOf(PosColorVertex)), &vertex_layout, bgfx.BufferFlags_None);
@@ -140,7 +146,7 @@ pub fn main() !void {
     const ibh = bgfx.createIndexBuffer(bgfx.makeRef(&cube_tri_list, cube_tri_list.len * @sizeOf(u16)), bgfx.BufferFlags_None);
     defer bgfx.destroyIndexBuffer(ibh);
 
-    c.SDL_Log("Loading Shaders");
+    std.debug.print("Loading Shaders", .{});
 
     const compiledVertexShaderBuffer = try loadCompiledShader("assets/shaders/cubes/vs_cubes.sc.bin", allocator);
     defer allocator.free(compiledVertexShaderBuffer);
@@ -166,14 +172,14 @@ pub fn main() !void {
     var quit = false;
     const start_time: i64 = std.time.milliTimestamp();
 
-    c.SDL_Log("Main Loop Starting");
+    std.debug.print("Main Loop Starting", .{});
 
     while (!quit) {
-        var event: c.SDL_Event = undefined;
-        while (c.SDL_PollEvent(&event) != 0) {
+        var event: zsdl.Event = undefined;
+        while (zsdl.pollEvent(&event)) {
             switch (event.type) {
-                c.SDL_QUIT => {
-                    c.SDL_Log("Main Loop Stopping");
+                .quit => {
+                    std.debug.print("Main Loop Stopping", .{});
                     quit = true;
                 },
                 else => {},
@@ -206,7 +212,7 @@ pub fn main() !void {
         _ = bgfx.frame(false);
     }
 
-    c.SDL_Log("Shutting down");
+    std.debug.print("Shutting down", .{});
 }
 
 pub fn loadCompiledShader(path: []const u8, allocator: std.mem.Allocator) ![]u8 {

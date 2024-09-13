@@ -29,13 +29,22 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // sdl2
+    // zsdl
+    const zsdl = b.dependency("zsdl", .{});
+    exe.root_module.addImport("zsdl2", zsdl.module("zsdl2"));
+
+    @import("zsdl").link_SDL2(exe);
+
+    const sdl2_libs_path = b.dependency("sdl2-prebuilt", .{}).path("").getPath(b);
+
+    @import("zsdl").addLibraryPathsTo(sdl2_libs_path, exe);
+    @import("zsdl").addRPathsTo(sdl2_libs_path, exe);
+
+    if (@import("zsdl").install_SDL2(b, target.result, sdl2_libs_path, .bin)) |install_sdl2_step| {
+        b.getInstallStep().dependOn(install_sdl2_step);
+    }
+
     if (target.result.isDarwin()) {
-        exe.addFrameworkPath(b.path("3rdparty/sdl2/osx"));
-
-        exe.addRPath(b.path("3rdparty/sdl2/osx"));
-
-        exe.linkFramework("sdl2");
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreFoundation");
         exe.linkFramework("Cocoa");
@@ -44,9 +53,6 @@ pub fn build(b: *std.Build) void {
         exe.linkFramework("IOKit");
         exe.linkFramework("Metal");
     } else if (target.result.os.tag == .windows) {
-        exe.addIncludePath(b.path("3rdparty/sdl2/windows/include"));
-        exe.addLibraryPath(b.path("3rdparty/sdl2/windows/win64"));
-        exe.linkSystemLibrary("sdl2");
         exe.linkSystemLibrary("opengl32");
         exe.linkSystemLibrary("gdi32");
         exe.linkSystemLibrary("winmm");
@@ -67,13 +73,6 @@ pub fn build(b: *std.Build) void {
 
     const zmath = b.dependency("zmath", .{});
     exe.root_module.addImport("zmath", zmath.module("root"));
-
-    // zigstr dependency, pulled via build.zig.zon
-    const zigstr = b.dependency("zigstr", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("zigstr", zigstr.module("zigstr"));
 
     // Link the bgfx libs
     bx.link(exe);

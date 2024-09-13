@@ -1,0 +1,22 @@
+.{
+    .name = "zsdl",
+    .version = "0.2.0",
+
+    .min_zig_version = "0.13.0",
+
+    .dependencies = .{
+        .@"sdl2-prebuilt" = .{
+            .url = "https://github.com/zig-gamedev/SDL2-prebuilt/archive/01ed17a8a2c85943be82fd9638212a1f1ab6f2b9.tar.gz",
+            .hash = "122028412e5d640fdf21044d4d0ac1287e1bc976e87859d2da6a716eb4fe1326f630",
+            .lazy = true,
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "libs",
+        "src",
+        "README.md",
+    },
+}
