@@ -1,6 +1,6 @@
 const std = @import("std");
 const math = std.math;
-const print = std.debug.print;
+const print = std.log.info;
 const assert = std.debug.assert;
 const panic = std.debug.panic;
 const bgfx = @import("bgfx");
@@ -78,7 +78,7 @@ pub fn main() !void {
     });
     defer zsdl.quit();
 
-    std.debug.print("Creating SDL Window", .{});
+    std.log.info("Creating SDL Window", .{});
 
     const window = try zsdl.createWindow(
         "BGFX Zig Test",
@@ -97,7 +97,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    std.debug.print("Creating BGFX Init State", .{});
+    std.log.info("Creating BGFX Init State", .{});
 
     var bgfxInit = std.mem.zeroes(bgfx.Init);
     bgfxInit.type = bgfx.RendererType.Metal;
@@ -119,14 +119,14 @@ pub fn main() !void {
     }
 
     // Initialize bgfx
-    std.debug.print("BGFX Initializing", .{});
+    std.log.info("BGFX Initializing", .{});
 
     const success = bgfx.init(&bgfxInit);
     defer bgfx.shutdown();
     assert(success);
 
     // Enable Vsync
-    std.debug.print("BGFX - Enabling Vsync", .{});
+    std.log.info("BGFX - Enabling Vsync", .{});
     bgfx.reset(WIDTH, HEIGHT, bgfx.ResetFlags_Vsync, bgfxInit.resolution.format);
 
     // Enable debug text.
@@ -135,7 +135,7 @@ pub fn main() !void {
     // Set view 0 clear state.
     bgfx.setViewClear(0, bgfx.ClearFlags_Color | bgfx.ClearFlags_Depth, 0x303030ff, 1.0, 0);
 
-    std.debug.print("Creating buffers", .{});
+    std.log.info("Creating buffers", .{});
 
     const vertex_layout = PosColorVertex.layoutInit();
     const vbh = bgfx.createVertexBuffer(bgfx.makeRef(&cube_vertices, cube_vertices.len * @sizeOf(PosColorVertex)), &vertex_layout, bgfx.BufferFlags_None);
@@ -144,7 +144,7 @@ pub fn main() !void {
     const ibh = bgfx.createIndexBuffer(bgfx.makeRef(&cube_tri_list, cube_tri_list.len * @sizeOf(u16)), bgfx.BufferFlags_None);
     defer bgfx.destroyIndexBuffer(ibh);
 
-    std.debug.print("Loading Shaders", .{});
+    std.log.info("Loading Shaders", .{});
 
     const compiledVertexShaderBuffer = try loadCompiledShader("assets/shaders/cubes/vs_cubes.sc.bin", allocator);
     defer allocator.free(compiledVertexShaderBuffer);
@@ -170,14 +170,14 @@ pub fn main() !void {
     var quit = false;
     const start_time: i64 = std.time.milliTimestamp();
 
-    std.debug.print("Main Loop Starting", .{});
+    std.log.info("Main Loop Starting", .{});
 
     while (!quit) {
         var event: zsdl.Event = undefined;
         while (zsdl.pollEvent(&event)) {
             switch (event.type) {
                 .quit => {
-                    std.debug.print("Main Loop Stopping", .{});
+                    std.log.info("Main Loop Stopping", .{});
                     quit = true;
                 },
                 else => {},
@@ -210,7 +210,7 @@ pub fn main() !void {
         _ = bgfx.frame(false);
     }
 
-    std.debug.print("Shutting down", .{});
+    std.log.info("Shutting down", .{});
 }
 
 pub fn loadCompiledShader(path: []const u8, allocator: std.mem.Allocator) ![]u8 {
