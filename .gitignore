@@ -5,3 +5,5 @@ zig-out
 .DS_Store
 *.sc.bin
 .bin
+.zig-cache
+.vscode

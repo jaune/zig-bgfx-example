@@ -1,41 +1,62 @@
 const std = @import("std");
 
-pub const pkg = std.build.Pkg{
-    .name = "zmath",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
-};
-
-pub fn build(b: *std.build.Builder) void {
-    const build_mode = b.standardReleaseOptions();
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const tests = buildTests(b, build_mode, target);
+
+    const options = .{
+        .optimize = b.option(
+            std.builtin.OptimizeMode,
+            "optimize",
+            "Select optimization mode",
+        ) orelse b.standardOptimizeOption(.{
+            .preferred_optimize_mode = .ReleaseFast,
+        }),
+        .enable_cross_platform_determinism = b.option(
+            bool,
+            "enable_cross_platform_determinism",
+            "Enable cross-platform determinism",
+        ) orelse true,
+    };
+
+    const options_step = b.addOptions();
+    inline for (std.meta.fields(@TypeOf(options))) |field| {
+        options_step.addOption(field.type, field.name, @field(options, field.name));
+    }
+
+    const options_module = options_step.createModule();
+
+    const zmath = b.addModule("root", .{
+        .root_source_file = b.path("src/main.zig"),
+        .imports = &.{
+            .{ .name = "zmath_options", .module = options_module },
+        },
+    });
 
     const test_step = b.step("test", "Run zmath tests");
-    test_step.dependOn(&tests.step);
-}
 
-pub fn buildTests(
-    b: *std.build.Builder,
-    build_mode: std.builtin.Mode,
-    target: std.zig.CrossTarget,
-) *std.build.LibExeObjStep {
-    const tests = b.addTest(thisDir() ++ "/src/main.zig");
-    tests.setBuildMode(build_mode);
-    tests.setTarget(target);
-    return tests;
-}
+    const tests = b.addTest(.{
+        .name = "zmath-tests",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = options.optimize,
+    });
+    b.installArtifact(tests);
 
-pub fn buildBenchmarks(
-    b: *std.build.Builder,
-    target: std.zig.CrossTarget,
-) *std.build.LibExeObjStep {
-    const exe = b.addExecutable("benchmark", thisDir() ++ "/src/benchmark.zig");
-    exe.setBuildMode(std.builtin.Mode.ReleaseFast);
-    exe.setTarget(target);
-    exe.addPackage(pkg);
-    return exe;
-}
+    tests.root_module.addImport("zmath_options", options_module);
 
-inline fn thisDir() []const u8 {
-    return comptime std.fs.path.dirname(@src().file) orelse ".";
+    test_step.dependOn(&b.addRunArtifact(tests).step);
+
+    const benchmark_step = b.step("benchmark", "Run zmath benchmarks");
+
+    const benchmarks = b.addExecutable(.{
+        .name = "zmath-benchmarks",
+        .root_source_file = b.path("src/benchmark.zig"),
+        .target = target,
+        .optimize = options.optimize,
+    });
+    b.installArtifact(benchmarks);
+
+    benchmarks.root_module.addImport("zmath", zmath);
+
+    benchmark_step.dependOn(&b.addRunArtifact(benchmarks).step);
 }

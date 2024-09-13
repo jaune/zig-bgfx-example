@@ -7,13 +7,16 @@ const bgfx_path = "3rdparty/bgfx/";
 
 var framework_dir: ?[]u8 = null;
 
-pub fn link(exe: *std.build.LibExeObjStep) void {
+pub fn link(exe: *std.Build.Step.Compile) void {
     const lib = buildLibrary(exe);
     addBgfxIncludes(exe);
     exe.linkLibrary(lib);
 }
 
-fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
+fn buildLibrary(exe: *std.Build.Step.Compile) *std.Build.Step.Compile {
+    const b = exe.step.owner;
+    const target = exe.root_module.resolved_target.?;
+
     const cxx_options = [_][]const u8{
         "-fno-strict-aliasing",
         "-fno-exceptions",
@@ -24,32 +27,32 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
         "-DBGFX_CONFIG_MULTITHREADED=0", // OSX does not support multithreaded rendering
     };
 
-    var bgfx_module = exe.step.owner.createModule(.{
-        .source_file = .{ .path = thisDir() ++ "/" ++ bgfx_path ++ "bindings/zig/bgfx.zig"},
+    const bgfx_module = b.createModule(.{
+        .root_source_file = b.path(bgfx_path ++ "bindings/zig/bgfx.zig"),
     });
 
-    const bgfx_lib = exe.step.owner.addStaticLibrary(.{
+    const bgfx_lib = b.addStaticLibrary(.{
         .name = "bgfx",
-        .target = exe.target,
-        .optimize = exe.optimize,
+        .target = target,
+        .optimize = exe.root_module.optimize.?,
     });
 
-    exe.addModule("bgfx", bgfx_module);
+    exe.root_module.addImport("bgfx", bgfx_module);
 
-    bgfx_lib.addIncludePath(.{ .path = bgfx_path ++ "include/"});
-    bgfx_lib.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/"});
-    bgfx_lib.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/directx-headers/include/directx/"});
-    bgfx_lib.addIncludePath(.{ .path = bgfx_path ++ "3rdparty/khronos/"});
-    bgfx_lib.addIncludePath(.{ .path = bgfx_path ++ "src/"});
+    bgfx_lib.addIncludePath(b.path(bgfx_path ++ "include/"));
+    bgfx_lib.addIncludePath(b.path(bgfx_path ++ "3rdparty/"));
+    bgfx_lib.addIncludePath(b.path(bgfx_path ++ "3rdparty/directx-headers/include/directx/"));
+    bgfx_lib.addIncludePath(b.path(bgfx_path ++ "3rdparty/khronos/"));
+    bgfx_lib.addIncludePath(b.path(bgfx_path ++ "src/"));
 
-    if (bgfx_lib.target.isDarwin()) {
-        bgfx_lib.addCSourceFile(.{ .file = .{ .path = bgfx_path ++ "src/amalgamated.mm"}, .flags = &cxx_options});
+    if (target.result.isDarwin()) {
+        bgfx_lib.addCSourceFile(.{ .file = b.path(bgfx_path ++ "src/amalgamated.mm"), .flags = &cxx_options });
         bgfx_lib.linkFramework("Foundation");
         bgfx_lib.linkFramework("CoreFoundation");
         bgfx_lib.linkFramework("Cocoa");
         bgfx_lib.linkFramework("QuartzCore");
     } else {
-        bgfx_lib.addCSourceFile(.{ .file = .{ .path = bgfx_path ++ "src/amalgamated.cpp"}, .flags = &cxx_options});
+        bgfx_lib.addCSourceFile(.{ .file = b.path(bgfx_path ++ "src/amalgamated.cpp"), .flags = &cxx_options });
     }
 
     bgfx_lib.want_lto = false;
@@ -64,10 +67,8 @@ fn buildLibrary(exe: *std.build.LibExeObjStep) *std.build.LibExeObjStep {
     return bgfx_lib;
 }
 
-fn addBgfxIncludes(exe: *std.build.LibExeObjStep) void {
-    exe.addIncludePath(.{ .path = thisDir() ++ "/" ++ bgfx_path ++ "include/"});
-}
+fn addBgfxIncludes(exe: *std.Build.Step.Compile) void {
+    const b = exe.step.owner;
 
-inline fn thisDir() []const u8 {
-    return comptime std.fs.path.dirname(@src().file) orelse ".";
+    exe.addIncludePath(b.path(bgfx_path ++ "include/"));
 }

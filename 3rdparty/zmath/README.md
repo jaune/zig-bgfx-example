@@ -1,4 +1,4 @@
-# zmath v0.9.5 - SIMD math library for game developers
+# zmath v0.10.0 - SIMD math library for game developers
 
 Tested on x86_64 and AArch64.
 
@@ -14,17 +14,19 @@ An intro article can be found [here](https://zig.news/michalz/fast-multi-platfor
 
 ## Getting started
 
-Copy `zmath` folder to a `libs` subdirectory of the root of your project.
+Copy `zmath` into a subdirectory of your project and add the following to your `build.zig.zon` .dependencies:
+```zig
+    .zmath = .{ .path = "libs/zmath" },
+```
 
 Then in your `build.zig` add:
 
 ```zig
-const std = @import("std");
-const zmath = @import("libs/zmath/build.zig");
+pub fn build(b: *std.Build) void {
+    const exe = b.addExecutable(.{ ... });
 
-pub fn build(b: *std.build.Builder) void {
-    ...
-    exe.addPackage(zmath.pkg);
+    const zmath = b.dependency("zmath", .{});
+    exe.root_module.addImport("zmath", zmath.module("root"));
 }
 ```
 
