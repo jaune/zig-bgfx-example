@@ -74,7 +74,6 @@ const cube_tri_list = [_]u16{
 pub fn main() !void {
     try zsdl.init(.{
         .video = true,
-        .audio = false,
         .events = true,
     });
     defer zsdl.quit();
@@ -109,14 +108,13 @@ pub fn main() !void {
     bgfxInit.debug = true;
 
     var wmi: zsdl.SysWMInfo = std.mem.zeroes(zsdl.SysWMInfo);
-
     if (!zsdl.getWindowWMInfo(window, &wmi)) {
         return error.GetWindowWMInfoError;
     }
 
     if (builtin.target.os.tag == .windows) {
         bgfxInit.platformData.nwh = wmi.info.win.window;
-    } else if (builtin.target.isDarwin()) {
+    } else if (builtin.os.tag == .macos) {
         bgfxInit.platformData.nwh = wmi.info.cocoa.window;
     }
 

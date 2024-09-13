@@ -44,14 +44,20 @@ fn buildLibrary(exe: *std.Build.Step.Compile) *std.Build.Step.Compile {
     bgfx_lib.addIncludePath(b.path(bgfx_path ++ "3rdparty/khronos/"));
     bgfx_lib.addIncludePath(b.path(bgfx_path ++ "src/"));
 
-    if (target.result.isDarwin()) {
-        bgfx_lib.addCSourceFile(.{ .file = b.path(bgfx_path ++ "src/amalgamated.mm"), .flags = &cxx_options });
+    if (target.result.os.tag == .macos) {
+        bgfx_lib.addCSourceFile(.{
+            .file = b.path(bgfx_path ++ "src/amalgamated.mm"),
+            .flags = &cxx_options,
+        });
         bgfx_lib.linkFramework("Foundation");
         bgfx_lib.linkFramework("CoreFoundation");
         bgfx_lib.linkFramework("Cocoa");
         bgfx_lib.linkFramework("QuartzCore");
     } else {
-        bgfx_lib.addCSourceFile(.{ .file = b.path(bgfx_path ++ "src/amalgamated.cpp"), .flags = &cxx_options });
+        bgfx_lib.addCSourceFile(.{
+            .file = b.path(bgfx_path ++ "src/amalgamated.cpp"),
+            .flags = &cxx_options,
+        });
     }
 
     bgfx_lib.want_lto = false;

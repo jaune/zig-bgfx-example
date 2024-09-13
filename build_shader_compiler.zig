@@ -389,10 +389,16 @@ pub fn build(b: *std.Build, target: std.Build.ResolvedTarget, build_mode: std.bu
     });
 
     if (target.result.os.tag == .windows) {
-        glslang_lib.addCSourceFile(.{ .file = b.path(glslang_path ++ "glslang/OSDependent/Windows/ossource.cpp"), .flags = &glslang_cxx_options });
+        glslang_lib.addCSourceFile(.{
+            .file = b.path(glslang_path ++ "glslang/OSDependent/Windows/ossource.cpp"),
+            .flags = &glslang_cxx_options,
+        });
     }
-    if (target.result.os.tag == .linux or target.result.isDarwin()) {
-        glslang_lib.addCSourceFile(.{ .file = b.path(glslang_path ++ "glslang/OSDependent/Unix/ossource.cpp"), .flags = &glslang_cxx_options });
+    if (target.result.os.tag == .linux or target.result.os.tag == .macos) {
+        glslang_lib.addCSourceFile(.{
+            .file = b.path(glslang_path ++ "glslang/OSDependent/Unix/ossource.cpp"),
+            .flags = &glslang_cxx_options,
+        });
     }
 
     glslang_lib.want_lto = false;
@@ -640,7 +646,7 @@ pub fn build(b: *std.Build, target: std.Build.ResolvedTarget, build_mode: std.bu
     exe.linkLibrary(spirv_cross_lib);
     exe.linkSystemLibrary("c++");
 
-    if (target.result.isDarwin()) {
+    if (target.result.os.tag == .macos) {
         exe.linkFramework("CoreFoundation");
         exe.linkFramework("Foundation");
     }

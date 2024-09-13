@@ -51,7 +51,7 @@ pub fn build(b: *std.Build) void {
         b.getInstallStep().dependOn(install_sdl2_step);
     }
 
-    if (target.result.isDarwin()) {
+    if (target.result.os.tag == .macos) {
         exe.linkFramework("Foundation");
         exe.linkFramework("CoreFoundation");
         exe.linkFramework("Cocoa");
@@ -166,12 +166,13 @@ pub fn addShaderCompilerTaskToBuild(b: *std.Build, shader_compiler_exe: *std.Bui
         run_cmd.addArg(shader_type);
 
         // TODO: add more platforms
-        run_cmd.addArg("--platform");
-        if (target.result.isDarwin()) {
+        if (target.result.os.tag == .macos) {
+            run_cmd.addArg("--platform");
             run_cmd.addArg("osx");
             run_cmd.addArg("--profile");
             run_cmd.addArg("metal");
         } else if (target.result.os.tag == .windows) {
+            run_cmd.addArg("--platform");
             run_cmd.addArg("windows");
             // for now we assume GLSL 400
             run_cmd.addArg("--profile");

@@ -28,7 +28,7 @@ fn buildLibrary(exe: *std.Build.Step.Compile) *std.Build.Step.Compile {
 
     addBxIncludes(bx_lib);
     bx_lib.addIncludePath(b.path(bx_path ++ "3rdparty/"));
-    if (target.result.isDarwin()) {
+    if (target.result.os.tag == .macos) {
         bx_lib.linkFramework("CoreFoundation");
         bx_lib.linkFramework("Foundation");
     }
@@ -51,7 +51,7 @@ fn addBxIncludes(exe: *std.Build.Step.Compile) void {
 
     if (target.result.os.tag == .windows) {
         compat_include = bx_path ++ "include/compat/mingw/";
-    } else if (target.result.isDarwin()) {
+    } else if (target.result.os.tag == .macos) {
         compat_include = bx_path ++ "include/compat/osx/";
     }
 
