@@ -30,14 +30,13 @@ fn buildLibrary(exe: *std.Build.Step.Compile) *std.Build.Step.Compile {
     const bgfx_module = b.createModule(.{
         .root_source_file = b.path(bgfx_path ++ "bindings/zig/bgfx.zig"),
     });
+    exe.root_module.addImport("bgfx", bgfx_module);
 
     const bgfx_lib = b.addStaticLibrary(.{
         .name = "bgfx",
         .target = target,
         .optimize = exe.root_module.optimize.?,
     });
-
-    exe.root_module.addImport("bgfx", bgfx_module);
 
     bgfx_lib.addIncludePath(b.path(bgfx_path ++ "include/"));
     bgfx_lib.addIncludePath(b.path(bgfx_path ++ "3rdparty/"));

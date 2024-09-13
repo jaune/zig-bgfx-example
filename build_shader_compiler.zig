@@ -4,8 +4,6 @@ const bx = @import("build_bx.zig");
 const bimg = @import("build_bimg.zig");
 const bgfx = @import("build_bgfx.zig");
 
-const Pkg = std.Build.Pkg;
-
 pub fn build(b: *std.Build, target: std.Build.ResolvedTarget, build_mode: std.builtin.Mode) *std.Build.Step.Compile {
     // fcpp
     const fcpp_cxx_options = [_][]const u8{

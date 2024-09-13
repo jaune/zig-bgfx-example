@@ -30,8 +30,10 @@ pub fn build(b: *std.Build) void {
     });
 
     // zsdl
-    const zsdl = b.dependency("zsdl", .{});
-    exe.root_module.addImport("zsdl2", zsdl.module("zsdl2"));
+    exe.root_module.addImport(
+        "zsdl2",
+        b.dependency("zsdl", .{}).module("zsdl2"),
+    );
 
     @import("zsdl").link_SDL2(exe);
 
@@ -40,7 +42,12 @@ pub fn build(b: *std.Build) void {
     @import("zsdl").addLibraryPathsTo(sdl2_libs_path, exe);
     @import("zsdl").addRPathsTo(sdl2_libs_path, exe);
 
-    if (@import("zsdl").install_SDL2(b, target.result, sdl2_libs_path, .bin)) |install_sdl2_step| {
+    if (@import("zsdl").install_SDL2(
+        b,
+        target.result,
+        sdl2_libs_path,
+        .bin,
+    )) |install_sdl2_step| {
         b.getInstallStep().dependOn(install_sdl2_step);
     }
 
@@ -64,15 +71,10 @@ pub fn build(b: *std.Build) void {
     }
 
     // zmath - not a package yet, so manually make the module
-    const zmath_options_step = b.addOptions();
-    zmath_options_step.addOption(
-        bool,
-        "enable_cross_platform_determinism",
-        true,
+    exe.root_module.addImport(
+        "zmath",
+        b.dependency("zmath", .{}).module("root"),
     );
-
-    const zmath = b.dependency("zmath", .{});
-    exe.root_module.addImport("zmath", zmath.module("root"));
 
     // Link the bgfx libs
     bx.link(exe);
